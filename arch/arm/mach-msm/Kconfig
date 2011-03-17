@@ -373,6 +373,12 @@ config HTC_BATTCHG
 	default n
 	bool "HTC battery / charger driver"
 
+config HTC_BATTCHG_SBC
+	default n
+	bool "Superior Battery Charging mod"
+	help
+	  Superior Battery Charging mod
+
 config HTC_BATTCHG_SMEM
 	depends on HTC_BATTCHG
 	default n

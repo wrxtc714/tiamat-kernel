@@ -51,7 +51,7 @@
 #define VOLTAGE_MAX  		BRAVO_MAX_UV_MV
 #endif
 
-#define VOLTAGE_MIN_START  800 // Minimum value to start off with
+#define VOLTAGE_MIN_START  925 // Minimum value to start off with
 #define VOLTAGE_STEP 5
 
 int __init avs_init(int (*set_vdd)(int), u32 freq_cnt, u32 freq_idx);

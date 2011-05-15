@@ -45,7 +45,7 @@
 #define VOLTAGE_MIN  		MAHIMAHI_MIN_UV_MV /* mV */
 #define VOLTAGE_MAX  		MAHIMAHI_MAX_UV_MV
 #endif
-#if (defined(CONFIG_MACH_BRAVOC) || defined(CONFIG_MACH_BRAVOC))
+#if (defined(CONFIG_MACH_BRAVO) || defined(CONFIG_MACH_BRAVOC))
 #include "board-bravo.h"
 #define VOLTAGE_MIN  		BRAVO_MIN_UV_MV /* mV */
 #define VOLTAGE_MAX  		BRAVO_MAX_UV_MV

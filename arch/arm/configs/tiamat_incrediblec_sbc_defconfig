@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux/arm 2.6.38.6 Kernel Configuration
-# Sun May 15 18:42:20 2011
+# Linux/arm 2.6.38.7 Kernel Configuration
+# Sun May 23 11:42:20 2011
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -33,7 +33,7 @@ CONFIG_EXPERIMENTAL=y
 CONFIG_BROKEN_ON_SMP=y
 CONFIG_INIT_ENV_ARG_LIMIT=32
 CONFIG_CROSS_COMPILE=""
-CONFIG_LOCALVERSION="-Tiamat_Inc-v4.0.3-sbc"
+CONFIG_LOCALVERSION="-Tiamat_Inc-v4.0.4-sbc"
 # CONFIG_LOCALVERSION_AUTO is not set
 CONFIG_HAVE_KERNEL_GZIP=y
 CONFIG_HAVE_KERNEL_LZMA=y

@@ -256,7 +256,7 @@ static short avs_get_target_voltage(int freq_idx, bool update_table)
 	vdd_table = avs_state.avs_v + temp_index;
 
 	AVSDEBUG("vdd_table[%d]=%d\n", freq_idx, vdd_table[freq_idx]);
-	if (update_table || (vdd_table[freq_idx] == VOLTAGE_MAX)) {
+	if (update_table) {
 	  avs_update_voltage_table(vdd_table);
 	}
 
@@ -377,7 +377,7 @@ static int do_avs_timer(void *data)
 static int __init avs_work_init(void)
 {
 	struct sched_param param = { .sched_priority = MAX_RT_PRIO-1 };
-	kavs_task = kthread_create(do_avs_timer, NULL,
+	kavs_task = kthread_run(do_avs_timer, NULL,
 				   "avs");
 
 	if (IS_ERR(kavs_task)) {

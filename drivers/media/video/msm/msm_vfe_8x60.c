@@ -28,7 +28,8 @@
 #include "msm_vfe_8x60.h"
 #include "msm_vpe1_8x60.h"
 
-atomic_t irq_cnt;
+
+static atomic_t irq_cnt;
 
 #define CHECKED_COPY_FROM_USER(in) {					\
 	if (copy_from_user((in), (void __user *)cmd->value,		\
@@ -1523,6 +1524,7 @@ static int vfe31_proc_general(struct msm_vfe31_cmd *cmd)
 		atomic_set(&p_sync->stereo_snap_state,STEREO_SNAP_IDLE);
 		p_sync->vfeState = VFE_STATE_ACTIVE;
 		rc = vfe31_start();
+		msm_camio_disable_csi_log();
 		break;
 	case V31_UPDATE:
 		vfe31_update();
@@ -1556,6 +1558,13 @@ static int vfe31_proc_general(struct msm_vfe31_cmd *cmd)
 			goto proc_general_done;
 		}
 		cmdp = kmalloc(V31_OPERATION_CFG_LEN, GFP_ATOMIC);
+
+		if (!cmdp) {
+			pr_err("%s: cmdp allocation failed.\n", __func__);
+			rc = -ENOMEM;
+			goto proc_general_done;
+		}
+
 		if (copy_from_user(cmdp,
 			(void __user *)(cmd->value),
 			V31_OPERATION_CFG_LEN)) {
@@ -2043,7 +2052,8 @@ static int vfe31_proc_general(struct msm_vfe31_cmd *cmd)
 	}
 
 proc_general_done:
-	kfree(cmdp);
+	if(cmdp)
+		kfree(cmdp);
 
 	return rc;
 }
@@ -2352,8 +2362,10 @@ static int vfe31_config(struct msm_vfe_cfg_cmd *cmd, void *data)
 		break;
 	}
 vfe31_config_done:
-	kfree(scfg);
-	kfree(sack);
+	if(scfg)
+		kfree(scfg);
+	if(sack)
+		kfree(sack);
 	CDBG("%s done: rc = %d\n", __func__, (int) rc);
 	return rc;
 }
@@ -3306,7 +3318,7 @@ static void vfe31_do_tasklet(unsigned long data)
 	CDBG("=== vfe31_do_tasklet end === \n");
 }
 
-DECLARE_TASKLET(vfe31_tasklet, vfe31_do_tasklet, 0);
+static DECLARE_TASKLET(vfe31_tasklet, vfe31_do_tasklet, 0);
 
 static irqreturn_t vfe31_parse_irq(int irq_num, void *data)
 {

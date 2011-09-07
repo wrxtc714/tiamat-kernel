@@ -8,9 +8,10 @@ obj-$(CONFIG_MSM_CAMERA_LEGACY) += msm_camera.o
 #msm_v4l2.o
 obj-$(CONFIG_MSM_CAMERA_7X30) += msm_camera-7x30.o msm_vfe31.o msm_io_vfe31.o msm_axi_qos.o msm_vpe1.o
 ifdef CONFIG_CAMERA_ZSL
-obj-$(CONFIG_MSM_CAMERA_8X60) += msm_camera-8x60.o msm_io_8x60.o msm_vfe_8x60_ZSL.o msm_axi_qos.o msm_vpe1_8x60.o
+obj-$(CONFIG_MSM_CAMERA_8X60) += msm_camera-8x60.o msm_io_8x60.o msm_vfe_8x60_ZSL.o msm_axi_qos.o msm_vpe1.o
 else
-obj-$(CONFIG_MSM_CAMERA_8X60) += msm_camera-8x60.o msm_io_8x60.o msm_vfe_8x60.o msm_axi_qos.o msm_vpe1_8x60.o
+obj-$(CONFIG_MSM_CAMERA_8X60) += msm_camera-8x60.o msm_vfe_8x60.o msm_vpe1_8x60.o
+obj-$(CONFIG_MSM_CAMERA_8X60) += msm_camera.o msm_io_8x60.o msm_vfe31.o msm_axi_qos.o msm_vpe1.o
 endif
 obj-$(CONFIG_S5K3E2FX) += s5k3e2fx.o
 ifdef CONFIG_ARCH_MSM8X60
@@ -28,6 +29,7 @@ obj-$(CONFIG_MACH_EXPRESS) += s5k6aafx.o s5k6aafx_reg_flyer.o
 obj-$(CONFIG_MACH_EXPRESS_KT) += s5k6aafx.o s5k6aafx_reg_flyer.o
 obj-$(CONFIG_MACH_SUPERSONIC) += s5k6aafx_suc.o s5k6aafx_reg_suc.o
 obj-$(CONFIG_MACH_SHOOTER) += s5k6aafx.o s5k6aafx_reg_shooter.o s5k6aafx_reg_shooter_cob.o
+obj-$(CONFIG_MACH_SHOOTER_K) += s5k6aafx.o s5k6aafx_reg_shooter.o s5k6aafx_reg_shooter_cob.o
 obj-$(CONFIG_MACH_SHOOTER_U) += s5k6aafx.o s5k6aafx_reg_shooter.o s5k6aafx_reg_shooter_cob.o
 obj-$(CONFIG_MACH_VERDI) += s5k6aafx.o s5k6aafx_reg_verdi.o
 obj-$(CONFIG_MACH_VERDI_LTE) += s5k6aafx.o s5k6aafx_reg_verdi.o
@@ -41,6 +43,7 @@ obj-$(CONFIG_VB6801) += vb6801.o
 obj-$(CONFIG_OV8810) += ov8810.o
 obj-$(CONFIG_IMX105) += imx105.o imx105_reg.o
 obj-$(CONFIG_SP3D) += sp3d.o sp3d_reg_3d.o sp3d_reg_2d.o sp3d_reg_com.o sp3d_reg_cal.o
+obj-$(CONFIG_QS_S5K4E1) += qs_s5k4e1.o qs_s5k4e1_reg.o sp3d.o sp3d_reg_3d.o sp3d_reg_2d.o sp3d_reg_com.o sp3d_reg_cal.o
 ifdef CONFIG_MACH_SUPERSONIC
 obj-$(CONFIG_S5K3H1GX) += s5k3h1gx_suc.o s5k3h1gx_reg_suc.o
 else

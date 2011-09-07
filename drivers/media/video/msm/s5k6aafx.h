@@ -85,6 +85,12 @@ struct s5k6aafx_reg {
 	uint16_t clk_init_tb2_size;
 	const struct s5k6aafx_i2c_reg_conf *prev_snap_conf_init_tb2;
 	uint16_t prev_snap_conf_init_tb2_size;
+	const struct s5k6aafx_i2c_reg_conf *prev_HD;
+	uint16_t prev_HD_size;
+	const struct s5k6aafx_i2c_reg_conf *prev_VGA;
+	uint16_t prev_VGA_size;
+	const struct s5k6aafx_i2c_reg_conf *prev_mode_switch_VGA;
+	uint16_t prev_mode_switch_VGA_size;
 };
 
 #endif /* S5K6AAFX_H */

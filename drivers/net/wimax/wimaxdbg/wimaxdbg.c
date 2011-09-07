@@ -23,6 +23,11 @@ extern int mmc_wimax_set_packet_filter(int on);
 extern int mmc_wimax_set_netlog_withraw_status(int on);
 extern int mmc_wimax_set_sdio_interrupt_log(int on);
 
+extern int mmc_wimax_trigger_RD_FIFO_LEVEL_ERROR(int on);
+
+extern int mmc_wimax_set_wimax_FW_freeze_WK_RX(int on);
+extern int mmc_wimax_get_wimax_FW_freeze_WK_RX(void);
+
 #define BUF_LEN 100
 
 // # insmod wimaxdbg
@@ -141,13 +146,29 @@ ssize_t wimaxdbg_write(struct file *file, const char *buffer, unsigned long coun
         printk(KERN_INFO "%s: mmc_wimax_set_sdcclk_highspeed:1\n", __func__);
         mmc_wimax_set_sdcclk_highspeed(1);
     }
-     else if (dbg_para == 24) { // 24: Disable IRQ Counter logging
+    else if (dbg_para == 24) { // 24: Disable IRQ Counter logging
         printk(KERN_INFO "%s: mmc_wimax_set_irq_log_status:0\n", __func__);
         mmc_wimax_set_irq_log(0);
     }
     else if (dbg_para == 25) { // 25: Enable IRQ Coutner logging
         printk(KERN_INFO "%s: mmc_wimax_set_irq_log_status:1\n", __func__);
         mmc_wimax_set_irq_log(1);
+    }
+	else if (dbg_para == 26) { // 26: Disable mmc_wimax_trigger_RD_FIFO_LEVEL_ERROR
+        printk(KERN_INFO "%s: mmc_wimax_trigger_RD_FIFO_LEVEL_ERROR:0\n", __func__);
+        mmc_wimax_trigger_RD_FIFO_LEVEL_ERROR(0);
+    }
+	else if (dbg_para == 27) { // 27: Enable mmc_wimax_trigger_RD_FIFO_LEVEL_ERROR
+        printk(KERN_INFO "%s: mmc_wimax_trigger_RD_FIFO_LEVEL_ERROR:1\n", __func__);
+        mmc_wimax_trigger_RD_FIFO_LEVEL_ERROR(1);
+    }
+    else if (dbg_para == 28) { // 28: Disable mmc_wimax_set_wimax_FW_freeze_WK_RX
+        printk(KERN_INFO "%s: mmc_wimax_set_wimax_FW_freeze_WK_RX:0\n", __func__);
+        mmc_wimax_set_wimax_FW_freeze_WK_RX(0);
+    }
+    else if (dbg_para == 29) { // 29: Enable mmc_wimax_set_wimax_FW_freeze_WK_RX
+        printk(KERN_INFO "%s: mmc_wimax_set_wimax_FW_freeze_WK_RX:1\n", __func__);
+        mmc_wimax_set_wimax_FW_freeze_WK_RX(1);
     }
     else {
         printk(KERN_INFO "%s: None function:%d\n", __func__, dbg_para);

@@ -47,12 +47,17 @@
 #define OVERLAY_UPDATE_SCREEN		6	/*Refer to user_data field in struct mdp_overlay*/
 #define OVERLAY_UPDATE_SCREEN_EN	1
 #define OVERLAY_UPDATE_SCREEN_DIS	0
+
+#define OVERLAY_UPDATE_SOURCE			7	/*Refer to user_data field in struct mdp_overlay*/
+#define OVERLAY_UPDATE_SOURCE_CAMERA		1
+#define OVERLAY_UPDATE_SOURCE_DISCARD		0
 #ifdef CONFIG_FB_MSM_MIPI_DSI
 extern atomic_t dsi_unset_cnt;
 extern struct completion dsi_unset_comp;
-extern atomic_t sp3d_launch_camera;
-extern atomic_t dtv_on;
 #endif
+
+atomic_t ovsource = ATOMIC_INIT(OVERLAY_UPDATE_SOURCE_DISCARD);
+extern atomic_t dtv_on;
 
 atomic_t ov_play = ATOMIC_INIT(0);
 struct completion ov_comp;
@@ -1695,7 +1700,8 @@ int mdp4_overlay_3d(struct fb_info *info, struct msmfb_overlay_3d *req)
 		if(req->is_3d) {
 			init_completion(&ov_comp);
 			atomic_set(&ov_unset, 0);
-		}
+		} else
+			mdp4_dsi_blt_dmap_busy_wait(mfd);
 
 		mdp4_dsi_cmd_3d(mfd, req);
 		virtualfb3d = *req;
@@ -1704,6 +1710,7 @@ int mdp4_overlay_3d(struct fb_info *info, struct msmfb_overlay_3d *req)
                         if (mdp4_dsi_overlay_blt_stop(mfd) == 0)
                                mdp4_dsi_cmd_overlay_restore();
 			atomic_set(&ov_unset, 0);
+			atomic_set(&dsi_unset_cnt, 0);
 			complete(&dsi_unset_comp);
 		}
 	//use value 2(ennable) and 3(disable) for ui padding solution enable/disable
@@ -1885,17 +1892,23 @@ int mdp4_overlay_set(struct fb_info *info, struct mdp_overlay *req)
 	}
 
 #ifdef CONFIG_FB_MSM_MIPI_DSI
+	if(req->user_data[OVERLAY_UPDATE_SOURCE] == OVERLAY_UPDATE_SOURCE_CAMERA && !atomic_read(&ovsource)) {
+		atomic_set(&ovsource, OVERLAY_UPDATE_SOURCE_CAMERA);
+		req->user_data[OVERLAY_UPDATE_SOURCE] = OVERLAY_UPDATE_SOURCE_DISCARD;
+		pr_info("%s(%d)Found camera ovsource %d dstx %d bltmode %d dtvon %d 3d %d\n", __func__,  __LINE__,
+			atomic_read(&ovsource), req->dst_rect.x, mfd->blt_mode, atomic_read(&dtv_on), virtualfb3d.is_3d);
+	}
+
 	//Enable writeback when dst x is not zero
 	if (mixer == MDP4_MIXER0) {
-		//Need to run blt mode when dst x is not zero, skip 3D case because 3D is always fullscreen
-		if(req->dst_rect.x && virtualfb3d.is_3d == 0) {
-			if(pipe->blt_addr)
-				mdp4_dsi_blt_dmap_busy_wait(mfd);
-			mdp4_dsi_overlay_blt_start(mfd);
-		//Run blt mode only when camera is not lanuch or dtv is connected
-		}else if((mfd->blt_mode && !atomic_read(&sp3d_launch_camera)) || atomic_read(&dtv_on)) {
-			if(pipe->blt_addr)
-				mdp4_dsi_blt_dmap_busy_wait(mfd);
+
+               //Need to run blt mode when dst x is not zero, skip 3D case because 3D is always fullscreen
+               if(req->dst_rect.x && virtualfb3d.is_3d == 0) {
+                       mdp4_dsi_blt_dmap_busy_wait(mfd);
+                       mdp4_dsi_overlay_blt_start(mfd);
+               //Run blt mode only when camera is not lanuch or dtv is connected
+               }else if(mfd->blt_mode && (!atomic_read(&ovsource) || atomic_read(&dtv_on))) {
+			mdp4_dsi_blt_dmap_busy_wait(mfd);
 			mdp4_dsi_overlay_blt_start(mfd);
 		}
 	}
@@ -1971,6 +1984,7 @@ int mdp4_overlay_unset(struct fb_info *info, int ndx)
 	if (virtualfb3d.is_3d) {
 		atomic_set(&ov_unset, 1);
 	}
+	atomic_set(&ovsource, OVERLAY_UPDATE_SOURCE_DISCARD);
 
 	if(atomic_read(&ov_play)) {
 		//pr_info("%s(%d)found ov play is called ndx %d mixer %d\n", __func__, __LINE__, pipe->pipe_ndx, pipe->mixer_num);
@@ -1989,8 +2003,7 @@ int mdp4_overlay_unset(struct fb_info *info, int ndx)
 #ifdef CONFIG_FB_MSM_MIPI_DSI
 		if (ctrl->panel_mode & MDP4_PANEL_DSI_CMD) {
 			if (mfd->panel_power_on)
-				if(pipe->blt_addr)
-					mdp4_dsi_blt_dmap_busy_wait(mfd);
+				mdp4_dsi_blt_dmap_busy_wait(mfd);
 		}
 #else
 		if (ctrl->panel_mode & MDP4_PANEL_MDDI) {
@@ -2038,9 +2051,9 @@ int mdp4_overlay_unset(struct fb_info *info, int ndx)
 	mdp4_stat.overlay_unset[pipe->mixer_num]++;
 #ifdef CONFIG_FB_MSM_MIPI_DSI
 	if (pipe->mixer_num == MDP4_MIXER0) {
-		atomic_set(&dsi_unset_cnt, 0);
 		if (virtualfb3d.is_3d == 0) {
 			/* when (is_3d != 0), mdp4_overlay_3d() will do the complete() call */
+			atomic_set(&dsi_unset_cnt, 0);
 			complete(&dsi_unset_comp);
 		}
 	}

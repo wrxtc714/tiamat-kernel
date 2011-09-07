@@ -70,7 +70,13 @@
 
 #if defined(CUSTOMER_HW2) && defined(CONFIG_WIFI_CONTROL_FUNC)
 #include <linux/wifi_tiwlan.h>
+//HTC_CSP_START
+#include <mach/perflock.h>
+//HTC_CSP_END
 
+//HTC_CSP_START
+dhd_pub_t *priv_dhdp = NULL;
+//HTC_CSP_END
 struct semaphore wifi_control_sem;
 
 struct dhd_bus *g_bus;
@@ -888,7 +894,11 @@ dhd_op_if(dhd_if_t *ifp)
 			ret = -ENOMEM;
 		}
 		if (ret == 0) {
+#ifdef HTC_KlocWork
+			strncpy(ifp->net->name, ifp->name, IFNAMSIZ);
+#else
 			strcpy(ifp->net->name, ifp->name);
+#endif
 			memcpy(netdev_priv(ifp->net), &dhd, sizeof(dhd));
 			if ((err = dhd_net_attach(&dhd->pub, ifp->idx)) != 0) {
 				DHD_ERROR(("%s: dhd_net_attach failed, err %d\n",
@@ -1857,10 +1867,12 @@ dhd_ioctl_entry(struct net_device *net, struct ifreq *ifr, int cmd)
 	 * prevent M4 encryption.
 	 */
 	is_set_key_cmd = ((ioc.cmd == WLC_SET_KEY) ||
-	                 ((ioc.cmd == WLC_SET_VAR) &&
-	                        !(strncmp("wsec_key", ioc.buf, 9))) ||
-	                 ((ioc.cmd == WLC_SET_VAR) &&
-	                        !(strncmp("bsscfg:wsec_key", ioc.buf, 15))));
+	((ioc.cmd == WLC_SET_VAR) && (ioc.buf != NULL) &&
+	/* HTC_KlocWork: add (ioc.buf != NULL) */
+	!(strncmp("wsec_key", ioc.buf, 9))) ||
+	((ioc.cmd == WLC_SET_VAR) && (ioc.buf != NULL) &&
+	/* HTC_KlocWork: add (ioc.buf != NULL) */
+	!(strncmp("bsscfg:wsec_key", ioc.buf, 15))));
 	if (is_set_key_cmd) {
 		dhd_wait_pend8021x(net);
 	}
@@ -1931,6 +1943,13 @@ dhd_open(struct net_device *net)
 	ifidx = dhd_net2idx(dhd, net);
 
 	DHD_TRACE(("%s: ifidx %d\n", __FUNCTION__, ifidx));
+
+#ifdef HTC_KlocWork
+    if (ifidx < 0) {
+		DHD_ERROR(("[HTCKW] %s: ifidx %d < 0\n", __FUNCTION__, ifidx));
+		return -1;
+    }
+#endif
 
 	if ((dhd->iflist[ifidx]) && (dhd->iflist[ifidx]->state == WLC_E_IF_DEL)) {
 		DHD_ERROR(("%s: Error: called when IF already deleted\n", __FUNCTION__));
@@ -2085,9 +2104,17 @@ dhd_attach(osl_t *osh, struct dhd_bus *bus, uint bus_hdrlen)
 		strncpy(net->name, iface_name, IFNAMSIZ);
 		net->name[IFNAMSIZ - 1] = 0;
 		len = strlen(net->name);
+#ifdef HTC_KlocWork
+		if (len > 0) {
+			ch = net->name[len - 1];
+			if ((ch > '9' || ch < '0') && (len < IFNAMSIZ - 2))
+				strcat(net->name, "%d");
+		}
+#else
 		ch = net->name[len - 1];
 		if ((ch > '9' || ch < '0') && (len < IFNAMSIZ - 2))
 			strcat(net->name, "%d");
+#endif
 	}
 
 	if (dhd_add_if(dhd, 0, (void *)net, net->name, NULL, 0, 0) == DHD_BAD_IF)
@@ -2290,7 +2317,7 @@ dhd_bus_start(dhd_pub_t *dhdp)
 	setbit(dhdp->eventmask, WLC_E_NDIS_LINK);
 	setbit(dhdp->eventmask, WLC_E_MIC_ERROR);
 	setbit(dhdp->eventmask, WLC_E_PMKID_CACHE);
-	setbit(dhdp->eventmask, WLC_E_TXFAIL);
+	//setbit(dhdp->eventmask, WLC_E_TXFAIL);
 	setbit(dhdp->eventmask, WLC_E_JOIN_START);
 	setbit(dhdp->eventmask, WLC_E_SCAN_COMPLETE);
 	setbit(dhdp->eventmask, WLC_E_RELOAD);
@@ -2301,19 +2328,24 @@ dhd_bus_start(dhd_pub_t *dhdp)
 #ifdef WLC_E_RSSI_LOW 
         setbit(dhdp->eventmask, WLC_E_RSSI_LOW);
 #endif /* WLC_E_RSSI_LOW */
+//HTC_CSP_START
+	setbit(dhdp->eventmask, WLC_E_LOAD_IND);
+//HTC_CSP_END
 #if 0
 #ifdef SOFTAP
 	setbit(dhdp->eventmask, WLC_E_DEAUTH);
 #endif /* WLC_E_DEAUTH */
 #endif
 /* enable dongle roaming event */
-	setbit(dhdp->eventmask, WLC_E_ROAM);
+	//setbit(dhdp->eventmask, WLC_E_ROAM);
 #endif /* EMBEDDED_PLATFORM */
 
 	/* Bus is ready, do any protocol initialization */
 	if ((ret = dhd_prot_init(&dhd->pub)) < 0)
 		return ret;
-
+//HTC_CSP_START
+	priv_dhdp = dhdp;
+//HTC_CSP_END
 	return 0;
 }
 
@@ -2578,9 +2610,17 @@ dhd_module_cleanup(void)
 {
 	DHD_TRACE(("%s: Enter\n", __FUNCTION__));
 
+//HTC_CSP_START
+	if (priv_dhdp)
+		dhd_os_start_lock(priv_dhdp);
+//HTC_CSP_END
 	disable_dev_wlc_ioctl();
 	module_remove = 1;
 	module_insert = 0;
+//HTC_CSP_START
+	if (priv_dhdp)
+		dhd_os_start_unlock(priv_dhdp);
+//HTC_CSP_END
 	bcm_mdelay(1000);
 	dhd_bus_unregister();
 #if defined(CUSTOMER_HW2) && defined(CONFIG_WIFI_CONTROL_FUNC)

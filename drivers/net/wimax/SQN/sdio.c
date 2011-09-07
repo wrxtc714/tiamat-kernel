@@ -95,6 +95,9 @@ extern int mmc_wimax_get_netlog_withraw_status(void);
 extern int mmc_wimax_get_sdio_interrupt_log(void);
 extern int mmc_wimax_get_hostwakeup_IRQ_ID(void);
 
+extern int mmc_wimax_get_RD_FIFO_LEVEL_ERROR(void);
+
+extern int mmc_wimax_get_wimax_FW_freeze_WK_RX(void);
 /*******************************************************************/
 /* TX handlers                                                     */
 /*******************************************************************/
@@ -935,6 +938,10 @@ int sqn_sdio_it_lsb(struct sdio_func *func)
 	u8 is_card_sleeps = 0;
 	int retry = 0;
 
+	static int ReadDataFailed_ctr = 0;
+	int DisableIT_retry = 0;
+
+	struct mmc_host *host = func->card->host;
 	sqn_pr_enter();
 
 	/* NOTE: call of sdio_claim_host() is already done */
@@ -987,8 +994,55 @@ retry_ClearLSB_IN_WR_FIFO2:
 
 	if (status & SQN_SDIO_IT_RD_FIFO2_WM) {
 		rc = sqn_sdio_card_to_host(card);
-		if (rc)
+
+		//if (rc) {
+		if (rc || mmc_wimax_get_RD_FIFO_LEVEL_ERROR()) {
 			sqn_pr_err("can't read data from card, error %d\n", rc);
+
+			/* Disable RX interrupt for avoiding keep requesting CPU resource */
+			if (ReadDataFailed_ctr == 20) {
+
+				sqn_pr_info("Read data from card Failed successively 20 time! Disabled RX interrupt now!\n");
+
+				DisableIT_retry = 0;
+
+retry_DisableIT_LSB:
+				/* disable LSB */
+				sdio_writeb(func, 0, SQN_SDIO_IT_EN_LSBS, &rc);
+
+				if (!rc) {
+					sqn_pr_info("disabled interrupt(LSB) successful at #%d!\n", retry);
+				} else {
+					sqn_pr_info("disabled interrupt(LSB) failed at #%d!\n", retry);
+				}
+
+				if (rc && DisableIT_retry<5) {
+					DisableIT_retry++;
+					goto retry_DisableIT_LSB;
+				}
+
+				DisableIT_retry = 0;
+
+				if(mmc_wimax_get_wimax_FW_freeze_WK_RX())
+				{
+					sqn_pr_info("Try to disable interrupt at host side: \n");
+					sqn_pr_info("disable MMC_CAP_SDIO_IRQ & enable_sdio_irq 0,host->caps %lx\n",host->caps);
+					host->caps &= ~MMC_CAP_SDIO_IRQ;
+					host->ops->enable_sdio_irq(host, 0);
+
+					sqn_pr_info("disable GPIO%d wakeup interrupt\n", mmc_wimax_get_hostwakeup_gpio());
+					disable_irq_nosync(mmc_wimax_get_hostwakeup_IRQ_ID());
+				}
+
+
+			}
+			else {
+				ReadDataFailed_ctr++;
+			}
+		}
+		else {
+			ReadDataFailed_ctr = 0;
+		}
 
 		retry = 0;
 
@@ -1789,6 +1843,14 @@ static void sqn_sdio_remove(struct sdio_func *func)
 	 */
 	sdio_claim_host(func);
 	sqn_pr_info("+sdio_claim_host\n");
+
+	if(mmc_wimax_get_wimax_FW_freeze_WK_RX())
+	{
+		sqn_pr_info("in sqn_sdio_remove: enable MMC_CAP_SDIO_IRQ + host->caps %lx\n",func->card->host->caps);
+		func->card->host->caps |= MMC_CAP_SDIO_IRQ;
+		sqn_pr_info("in sqn_sdio_remove: enable MMC_CAP_SDIO_IRQ - host->caps %lx\n",func->card->host->caps);
+	}
+
 	sdio_release_irq(func);
 	sqn_pr_info("+sdio_release_irq\n");
 	sdio_disable_func(func);

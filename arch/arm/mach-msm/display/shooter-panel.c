@@ -40,6 +40,8 @@
 #include "../board-shooter.h"
 #include "../devices-msm8x60.h"
 #include "../../../../drivers/video/msm_8x60/mdp_hw.h"
+#include "../../../../drivers/video/msm_8x60/mipi_dsi.h"
+
 
 extern int panel_type;
 
@@ -422,6 +424,44 @@ static struct mipi_dsi_platform_data mipi_pdata = {
 	.dsi_power_save   = mipi_panel_power,
 };
 
+static char novatek_unlock[] =
+{
+        0xF3, 0xAA,
+};
+
+static char novatek_lock[] =
+{
+        0xFF, 0xAA,
+};
+
+static char novatek_2vci[] =
+{
+        0x03, 0x33,
+};
+
+static char novatek_3vci[] =
+{
+        0x03, 0x36,
+};
+
+static struct dsi_cmd_desc novatek_2vci_cmds[] = {
+        {DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+                sizeof(novatek_unlock), novatek_unlock},
+        {DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+                sizeof(novatek_2vci), novatek_2vci},
+        {DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+                sizeof(novatek_lock), novatek_lock},
+};
+
+static struct dsi_cmd_desc novatek_3vci_cmds[] = {
+        {DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+                sizeof(novatek_unlock), novatek_unlock},
+        {DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+                sizeof(novatek_2vci), novatek_3vci},
+        {DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+                sizeof(novatek_lock), novatek_lock},
+};
+
 #define BRI_SETTING_MIN		30
 #define BRI_SETTING_DEF		143
 #define BRI_SETTING_MAX		255
@@ -450,10 +490,10 @@ static unsigned char shooter_shrink_pwm(int val)
 
 	if (atomic_read(&g_3D_mode) != OFF_3D && shrink_br != 0)
 		shrink_br = 255;
-	else
+	else if(val)
 		last_br_2d = val;
 
-        PR_DISP_DEBUG("brightness orig=%d, transformed=%d\n", val, shrink_br);
+	PR_DISP_DEBUG("brightness orig=%d, transformed=%d\n", val, shrink_br);
 
 	return shrink_br;
 }
@@ -494,6 +534,8 @@ static int msm_fb_detect_panel(const char *name)
 static struct msm_fb_platform_data msm_fb_pdata = {
 	.detect_client = msm_fb_detect_panel,
 	.blt_mode = 1,
+	.width = 53,
+	.height = 95,
 };
 
 static struct platform_device msm_fb_device = {
@@ -1130,6 +1172,9 @@ static void shooter_3Dpanel_on(bool bLandscape)
 	struct pw8058_pwm_config pwm_conf;
 	int rc;
 
+	if (mipi_novatek_panel_data.mipi_send_cmds) {
+		mipi_novatek_panel_data.mipi_send_cmds(novatek_3vci_cmds, ARRAY_SIZE(novatek_3vci_cmds));
+	}
 	led_brightness_switch("lcd-backlight", 255);
 
 	if(system_rev >= 1) {
@@ -1171,6 +1216,11 @@ static void shooter_3Dpanel_on(bool bLandscape)
 static void shooter_3Dpanel_off(void)
 {
 	int rc;
+
+	if (mipi_novatek_panel_data.mipi_send_cmds) {
+		mipi_novatek_panel_data.mipi_send_cmds(novatek_2vci_cmds, ARRAY_SIZE(novatek_2vci_cmds));
+	}
+
 	if(system_rev >= 1) {
 		pwm_gpio_config.output_value = 0;
 		rc = pm8058_gpio_config(SHOOTER_3DLCM_PD, &pwm_gpio_config);

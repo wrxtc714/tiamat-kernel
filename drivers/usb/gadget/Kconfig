@@ -868,6 +868,13 @@ config USB_ANDROID_ACM
 	help
 	  Provides ACM serial function for android gadget driver.
 
+config PASCAL_DETECT
+	boolean "PASCAL DETECT"
+	depends on USB_ANDROID_ACM
+	default n
+	help
+	  Provides ACM serial function for pascal mode.
+
 config USB_ANDROID_ADB
 	boolean "Android gadget adb function"
 	depends on USB_ANDROID
@@ -915,6 +922,12 @@ config USB_ANDROID_RNDIS
 	depends on USB_ANDROID
 	help
 	  Provides RNDIS ethernet function for android gadget driver.
+
+config USB_ANDROID_ACCESSORY
+	boolean "Android USB accessory function"
+	depends on USB_ANDROID
+	help
+	  Provides Android USB Accessory support for android gadget driver.
 
 config USB_ANDROID_RMNET_SDIO
        boolean "RmNet over SDIO function driver"

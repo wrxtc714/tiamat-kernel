@@ -132,7 +132,7 @@ endif
 endif
 
 ifeq ($(CONFIG_ARCH_MSM8X60),y)
-zreladdr-y             := 0x40408000
-params_phys-y            := 0x40400100
-initrd_phys-y            := 0x41400000
+zreladdr-y             := 0x48008000
+params_phys-y            := 0x48000100
+initrd_phys-y            := 0x49000000
 endif

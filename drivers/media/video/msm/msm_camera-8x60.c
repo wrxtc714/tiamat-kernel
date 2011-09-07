@@ -45,14 +45,14 @@
 #else
 #include "msm_vfe_8x60.h"
 #endif
-DEFINE_MUTEX(ctrl_cmd_lock);
+static DEFINE_MUTEX(ctrl_cmd_lock);
 
 #define CAMERA_STOP_VIDEO 58
-spinlock_t pp_prev_spinlock;
-spinlock_t pp_snap_spinlock;
-spinlock_t pp_thumb_spinlock;
-spinlock_t pp_stereocam_spinlock;
-spinlock_t st_frame_spinlock;
+static spinlock_t pp_prev_spinlock;
+static spinlock_t pp_snap_spinlock;
+static spinlock_t pp_thumb_spinlock;
+static spinlock_t pp_stereocam_spinlock;
+static spinlock_t st_frame_spinlock;
 
 #define ERR_USER_COPY(to) pr_err("%s(%d): copy %s user\n", \
 				__func__, __LINE__, ((to) ? "to" : "from"))
@@ -67,8 +67,8 @@ spinlock_t st_frame_spinlock;
 static struct class *msm_class;
 static dev_t msm_devno;
 static LIST_HEAD(msm_sensors);
-struct  msm_control_device *g_v4l2_control_device;
-int g_v4l2_opencnt;
+static struct  msm_control_device *g_v4l2_control_device;
+static int g_v4l2_opencnt;
 static int camera_node;
 static enum msm_camera_type camera_type[MAX_SENSOR_NUM];
 
@@ -176,6 +176,7 @@ static void msm_region_init(struct msm_sync *sync)
 static void msm_queue_init(struct msm_device_queue *queue, const char *name)
 {
 	spin_lock_init(&queue->lock);
+	spin_lock_init(&queue->wait_lock);
 	queue->len = 0;
 	queue->max = 0;
 	queue->name = name;
@@ -233,23 +234,23 @@ static void msm_enqueue_vpe(struct msm_device_queue *queue,
 })
 
 #define msm_delete_entry(queue, member, q_cmd) ({		\
-	unsigned long flags;					\
+	unsigned long __flags;					\
 	struct msm_device_queue *__q = (queue);			\
-	struct msm_queue_cmd *qcmd = 0;				\
+	struct msm_queue_cmd *__qcmd = 0;				\
 	pr_info("msm_delete_entry\n");			\
-	spin_lock_irqsave(&__q->lock, flags);			\
+	spin_lock_irqsave(&__q->lock, __flags);			\
 	if (!list_empty(&__q->list)) {				\
-		list_for_each_entry(qcmd, &__q->list, member)	\
-		if (qcmd == q_cmd) {				\
+		list_for_each_entry(__qcmd, &__q->list, member)	\
+		if (__qcmd == q_cmd) {				\
 			__q->len--;				\
-			list_del_init(&qcmd->member);		\
+			list_del_init(&__qcmd->member);		\
 			pr_info("msm_delete_entry, match found\n");\
 			kfree(q_cmd);				\
 			q_cmd = NULL;				\
 			break;					\
 		}						\
-	}							\
-	spin_unlock_irqrestore(&__q->lock, flags);		\
+	}						\
+	spin_unlock_irqrestore(&__q->lock, __flags);		\
 	q_cmd;		\
 })
 
@@ -747,6 +748,13 @@ static int __msm_get_frame(struct msm_sync *sync,
 
 	vdata = (struct msm_vfe_resp *)(qcmd->command);
 	pphy = &vdata->phy;
+	/* HTC_START Glenn 20110721 For klockwork issue */
+	if (!pphy) {
+		rc = -EFAULT;
+		pr_err("%s: Avoid accessing NULL pointer!\n", __func__);
+		goto err;
+	}
+	/* HTC_END */
 	rc = msm_pmem_frame_ptov_lookup(sync,
 			pphy->y_phy,
 			pphy->cbcr_phy,
@@ -890,6 +898,11 @@ static struct msm_queue_cmd *__msm_control(struct msm_sync *sync,
 		int timeout)
 {
 	int rc;
+	int loop = 0;
+	unsigned long flags = 0;
+	// get the command type first - prevent NULL pointer after wait_event_interruptible_timeout
+	int16_t ignore_qcmd_type = (int16_t)((struct msm_ctrl_cmd *)
+                                                (qcmd->command))->type;
 
 	CDBG("Inside __msm_control\n");
 	if (sync->event_q.len <= 100 && sync->frame_q.len <= 100) {
@@ -904,6 +917,7 @@ static struct msm_queue_cmd *__msm_control(struct msm_sync *sync,
 	if (!queue)
 		return NULL;
 
+wait_event:
 	/* wait for config status */
 	CDBG("Waiting for config status \n");
 	rc = wait_event_interruptible_timeout(
@@ -918,18 +932,39 @@ static struct msm_queue_cmd *__msm_control(struct msm_sync *sync,
 			return ERR_PTR(rc);
 		}
 		else if (rc < 0) {
-			pr_err("%s: wait_event error %d\n", __func__, rc);
-			/*msm_delete_entry(&sync->event_q, list_config, qcmd);*/
-			if (msm_delete_entry(&sync->event_q,
-					list_config, qcmd)) {
-				sync->ignore_qcmd = true;
-				sync->ignore_qcmd_type =
-					(int16_t)((struct msm_ctrl_cmd *)
-						(qcmd->command))->type;
+			spin_lock_irqsave(&queue->wait_lock, flags);
+			if (sync->qcmd_done) {
+				pr_info("%s: qcmd_done, cont. to wait\n",
+					__func__);
+				spin_unlock_irqrestore(&queue->wait_lock, flags);
+				goto wait_event;
+			} else if (rc == -512 && loop < 20) {
+				/* loop 20 times if rc is - 512,
+				 * to avoid ignoring command */
+				spin_unlock_irqrestore(&queue->wait_lock,
+					flags);
+				loop++;
+				msleep(5);
+				pr_info("%s: wait_event err %d\n",
+					__func__, rc);
+				pr_info("in loop %d time\n", loop);
+				goto wait_event;
+			} else {
+				pr_info("%s: wait_event err %d\n",
+					__func__, rc);
+				pr_info("%s: ignore cmd %d\n",
+					__func__, ignore_qcmd_type);
+				if (msm_delete_entry(&sync->event_q,
+						list_config, qcmd)) {
+					sync->ignore_qcmd = true;
+					sync->ignore_qcmd_type = ignore_qcmd_type;
+				}
+				spin_unlock_irqrestore(&queue->wait_lock, flags);
+				return ERR_PTR(rc);
 			}
-			return ERR_PTR(rc);
 		}
 	}
+	sync->qcmd_done = false;
 	qcmd = msm_dequeue(queue, list_control);
 	BUG_ON(!qcmd);
 	CDBG("__msm_control done \n");
@@ -1127,6 +1162,10 @@ static int msm_divert_st_frame(struct msm_sync *sync,
 	int rc = 0;
 	static int flag = 0;
 
+	/* HTC_START Glenn 20110721 For klockwork issue */
+	memset(&pinfo, 0x00, sizeof(struct msm_pmem_info));
+	memset(&buf, 0x00, sizeof(struct msm_st_frame));
+	/* HTC_END */
 	if (se->stats_event.msg_id != OUTPUT_TYPE_ST_L) {
 		if (se->resptype == MSM_CAM_RESP_STEREO_OP_1) {
 			rc = msm_pmem_frame_ptov_lookup(sync, data->phy.y_phy,
@@ -1451,6 +1490,8 @@ static int msm_ctrl_cmd_done(struct msm_control_device *ctrl_pmsm,
 	void __user *uptr;
 	struct msm_queue_cmd *qcmd = &ctrl_pmsm->qcmd;
 	struct msm_ctrl_cmd *command = &ctrl_pmsm->ctrl;
+	unsigned long flags = 0;
+	struct msm_device_queue *queue = &ctrl_pmsm->ctrl_q;
 
 	if (copy_from_user(command, arg, sizeof(*command))) {
 		ERR_COPY_FROM_USER();
@@ -1487,6 +1528,7 @@ static int msm_ctrl_cmd_done(struct msm_control_device *ctrl_pmsm,
 		}
 	}
 		
+	spin_lock_irqsave(&queue->wait_lock, flags);
 		/* wake up control thread */
 	/*msm_enqueue(&ctrl_pmsm->ctrl_q, &qcmd->list_control);*/
 	/* Ignore the command if the ctrl cmd has
@@ -1495,9 +1537,13 @@ static int msm_ctrl_cmd_done(struct msm_control_device *ctrl_pmsm,
 	 * error -512 from __msm_control*/
 	if (ctrl_pmsm->pmsm->sync->ignore_qcmd == true &&
 		ctrl_pmsm->pmsm->sync->ignore_qcmd_type == (int16_t)command->type) {
+		printk("%s: ignore this command %d\n", __func__, command->type);
 		ctrl_pmsm->pmsm->sync->ignore_qcmd = false;
 		ctrl_pmsm->pmsm->sync->ignore_qcmd_type = -1;
+		spin_unlock_irqrestore(&queue->wait_lock, flags);
 	} else /* wake up control thread */{
+		ctrl_pmsm->pmsm->sync->qcmd_done = true;
+		spin_unlock_irqrestore(&queue->wait_lock, flags);
 		msm_enqueue(&ctrl_pmsm->ctrl_q, &qcmd->list_control);
 	}
 	return 0;
@@ -1736,7 +1782,8 @@ static int msm_frame_axi_cfg(struct msm_sync *sync,
 	int rc = -EIO;
 	struct axidata axi_data;
 	void *data = &axi_data;
-	struct msm_pmem_region region[MAX_PMEM_CFG_BUFFERS];
+	/* HTC Glenn 20110721 for klockwork issue */
+	struct msm_pmem_region region[MAX_PMEM_CFG_BUFFERS + 1];
 	int pmem_type;
 
 	memset(&axi_data, 0, sizeof(axi_data));
@@ -2496,7 +2543,12 @@ static int msm_error_config(struct msm_sync *sync, void __user *arg)
 
 	if (qcmd)
 		atomic_set(&(qcmd->on_heap), 1);
-
+	/* HTC_START Glenn 20110721 For klockwork issue */
+	else {
+		pr_info("%s: kmalloc for qcmd failed.\n", __func__);
+		return -EFAULT;
+	}
+	/* HTC_END */
 	if (copy_from_user(&(qcmd->error_code), arg, sizeof(uint32_t))) {
 		ERR_COPY_FROM_USER();
 		free_qcmd(qcmd);
@@ -3083,6 +3135,10 @@ static int __msm_release(struct msm_sync *sync)
 		kfree(sync->cropinfo);
 		sync->cropinfo = NULL;
 		sync->croplen = 0;
+		/*re-init flag*/
+		sync->ignore_qcmd = false;
+		sync->ignore_qcmd_type = -1;
+		sync->qcmd_done = false;
 		pr_info("%s, free frame pmem region\n", __func__);
 		hlist_for_each_entry_safe(region, hnode, n,
 				&sync->pmem_frames, list) {
@@ -3965,7 +4021,13 @@ static int __msm_v4l2_control(struct msm_sync *sync,
 	}
 
 	rcmd = __msm_control(sync, v4l2_ctrl_q, qcmd, out->timeout_ms);
-
+	/* HTC_START Glenn 20110721 For klockwork issue */
+	if (!rcmd) {
+		pr_err("[CAM] %s: rcmd is NULL\n", __func__);
+		rc = -EFAULT;
+		goto end;
+	}
+	/* HTC_END */
 	if (IS_ERR(rcmd)) {
 		rc = PTR_ERR(rcmd);
 		goto end;
@@ -4287,6 +4349,7 @@ static int msm_sync_init(struct msm_sync *sync,
 	sync->core_powered_on = 0;
 	sync->ignore_qcmd = false;
 	sync->ignore_qcmd_type = -1;
+	sync->qcmd_done = false;
 	mutex_init(&sync->lock);
 	if (sync->sdata->strobe_flash_data) {
 		sync->sdata->strobe_flash_data->state = 0;
@@ -4374,6 +4437,11 @@ static int msm_device_init(struct msm_cam_device *pmsm,
 	return rc;
 }
 
+extern unsigned engineerid;
+int msm_camera_drv_start_liteon(struct platform_device *dev,
+                int (*sensor_probe)(struct msm_camera_sensor_info *,
+                        struct msm_sensor_ctrl *));
+
 int msm_camera_drv_start(struct platform_device *dev,
 		int (*sensor_probe)(struct msm_camera_sensor_info *,
 			struct msm_sensor_ctrl *))
@@ -4382,11 +4450,13 @@ int msm_camera_drv_start(struct platform_device *dev,
 	struct msm_sync *sync;
 	int rc = -ENODEV;
 
+	if(engineerid & 0x4)
+		return 	msm_camera_drv_start_liteon(dev,sensor_probe);
+
 	if (camera_node >= MAX_SENSOR_NUM) {
 		pr_err("%s: too many camera sensors\n", __func__);
 		return rc;
 	}
-
 	if (!msm_class) {
 		/* There are three device nodes per sensor */
 		rc = alloc_chrdev_region(&msm_devno, 0,

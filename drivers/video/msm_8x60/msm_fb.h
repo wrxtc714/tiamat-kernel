@@ -171,6 +171,8 @@ struct msm_fb_data_type {
 	uint32_t	blt_mode;
 	uint32_t	enable_uipadding;
 	int		(*esd_fixup)(uint32_t mfd_data);
+	uint32_t	width;
+	uint32_t	height;
 };
 
 struct dentry *msm_fb_get_debugfs_root(void);
@@ -184,6 +186,19 @@ int msm_fb_detect_client(const char *name);
 
 #ifdef CONFIG_FB_BACKLIGHT
 void msm_fb_config_backlight(struct msm_fb_data_type *mfd);
+#endif
+
+#if (defined(CONFIG_USB_FUNCTION_PROJECTOR) || defined(CONFIG_USB_ANDROID_PROJECTOR))
+/* For USB Projector to quick access the frame buffer info */
+struct msm_fb_info {
+    unsigned char *fb_addr;
+    int msmfb_area;
+    int xres;
+    int yres;
+};
+
+extern int msmfb_get_var(struct msm_fb_info *tmp);
+extern int msmfb_get_fb_area(void);
 #endif
 
 void fill_black_screen(void);

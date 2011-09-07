@@ -111,6 +111,8 @@ struct msm_camera_csi_params {
 	uint8_t lane_assign;
 	uint8_t settle_cnt;
 	uint8_t dpcm_scheme;
+	uint8_t mipi_driving_strength;/*from 0-3*/
+	uint8_t hs_impedence;
 };
 
 #if defined(CONFIG_CRYPTO_DEV_QCRYPTO) || \
@@ -253,6 +255,7 @@ struct msm_camera_sensor_info {
 	int mirror_mode; /* for sensor upside down */
 	int zero_shutter_mode; /* for doing zero shutter lag on MIPI */
 	int dev_node;
+	char *eeprom_data; /* qs_s5k4e1 */
 };
 
 
@@ -328,6 +331,7 @@ struct msm_adspdec_database {
 	struct dec_instance_table *dec_instance_list;
 };
 
+struct dsi_cmd_desc;
 struct msm_panel_common_pdata {
 	uintptr_t hw_revision_addr;
 	int gpio;
@@ -347,6 +351,7 @@ struct msm_panel_common_pdata {
 #endif
 	int (*mdp_color_enhance)(void);
 	int (*mdp_gamma)(void);
+	int (*mipi_send_cmds)(struct dsi_cmd_desc *cmds, uint32_t len);
 };
 
 struct lcdc_platform_data {
@@ -383,6 +388,8 @@ struct msm_fb_platform_data {
 	int mddi_prescan;
 	int (*allow_set_offset)(void);
 	int blt_mode;
+	uint32_t width;
+	uint32_t height;
 };
 
 struct msm_hdmi_platform_data {

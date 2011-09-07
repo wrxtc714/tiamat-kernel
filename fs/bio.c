@@ -1056,7 +1056,8 @@ static struct bio *__bio_map_user_iov(struct request_queue *q,
 		page_cache_release(pages[i]);
 	}
  out:
-	kfree(pages);
+	if (pages)
+		kfree(pages);
 	bio_put(bio);
 	return ERR_PTR(ret);
 }

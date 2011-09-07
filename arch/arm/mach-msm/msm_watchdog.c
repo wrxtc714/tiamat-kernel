@@ -34,6 +34,7 @@
 #include <mach/scm.h>
 #include <mach/board.h>
 #include "msm_watchdog.h"
+#include "htc_watchdog_monitor.h"
 
 #define TCSR_WDT_CFG 0x30
 
@@ -50,8 +51,10 @@ static unsigned long long last_pet;
 static struct workqueue_struct *msm_watchdog_wq;
 
 /*
- * On the kernel command line specify msm_watchdog.appsbark=0 to handle
- * watchdog barks on the secure side. By default barks are processed by Linux.
+ * On the kernel command line specify msm_watchdog.appsbark=1 to handle
+ * watchdog barks on the apps side.
+ * 2011-05-20: By default dog barks are processed by TrustZone.
+ * 2011-06-08: By default dog barks are processed by Kernel side.
  */
 static int appsbark = 1;
 module_param(appsbark, int, S_IRUGO);
@@ -97,23 +100,6 @@ static void wtd_dump_irqs(unsigned int dump)
 		last_irqs[n] = kstat_irqs(n);
 	}
 }
-static int kernel_flag_boot_config(char *str)
-{
-	unsigned long kernelflag;
-
-	if (!str)
-		return -EINVAL;
-
-	kernelflag = simple_strtoul(str, NULL, 16);
-
-	if (kernelflag & BIT0)
-		enable = 0;
-	else if(kernelflag & BIT3)
-		appsbark = 0;
-
-	return 0;
-}
-early_param("kernelflag", kernel_flag_boot_config);
 
 /* Remove static to allow call from suspend/resume function */
 int msm_watchdog_suspend(void)
@@ -121,7 +107,8 @@ int msm_watchdog_suspend(void)
 	if (enable) {
 		writel(1, WDT0_RST);
 		writel(0, WDT0_EN);
-		printk(KERN_INFO "msm_watchdog_suspend");
+		dsb();
+		printk(KERN_DEBUG "msm_watchdog_suspend\n");
 	}
 	return NOTIFY_DONE;
 }
@@ -133,7 +120,7 @@ int msm_watchdog_resume(void)
 		writel(1, WDT0_EN);
 		writel(1, WDT0_RST);
 		last_pet = sched_clock();
-		printk(KERN_INFO "msm_watchdog_resume");
+		printk(KERN_DEBUG "msm_watchdog_resume\n");
 	}
 	return NOTIFY_DONE;
 }
@@ -151,11 +138,13 @@ static int panic_wdog_handler(struct notifier_block *this,
 {
 	if (panic_timeout == 0) {
 		writel(0, WDT0_EN);
+		dsb();
 		secure_writel(0, MSM_TCSR_BASE + TCSR_WDT_CFG);
 	} else {
 		writel(32768 * (panic_timeout + 4), WDT0_BARK_TIME);
 		writel(32768 * (panic_timeout + 4), WDT0_BITE_TIME);
 		writel(1, WDT0_RST);
+		dsb();
 	}
 	return NOTIFY_DONE;
 }
@@ -168,6 +157,7 @@ void pet_watchdog(void)
 {
 	writel(1, WDT0_RST);
 	last_pet = sched_clock();
+	htc_watchdog_pet_cpu_record();
 }
 
 static void pet_watchdog_work(struct work_struct *work)
@@ -185,6 +175,7 @@ static void __exit exit_watchdog(void)
 	if (enable) {
 		writel(0, WDT0_EN);
 		writel(0, WDT0_EN); /* In case we got suspended mid-exit */
+		dsb();
 		secure_writel(0, MSM_TCSR_BASE + TCSR_WDT_CFG);
 		free_irq(WDT0_ACCSCSSNBARK_INT, 0);
 		enable = 0;
@@ -209,6 +200,9 @@ static irqreturn_t wdog_bark_handler(int irq, void *dev_id)
 	if (print_all_stacks) {
 		/* Suspend wdog until all stacks are printed */
 		msm_watchdog_suspend();
+
+		/* Dump top cpu loading processes */
+		htc_watchdog_top_stat();
 
 		/* Dump PC, LR, and registers. */
 		sysfs_printk_last_file();
@@ -239,6 +233,8 @@ static irqreturn_t wdog_bark_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
+#include <mach/board_htc.h>
+
 #define SCM_SET_REGSAVE_CMD 0x2
 
 static int __init init_watchdog(void)
@@ -249,6 +245,12 @@ static int __init init_watchdog(void)
 		unsigned addr;
 		int len;
 	} cmd_buf;
+
+	/* Switch msm_watchdog parameters by kernelflag */
+	if (get_kernel_flag() & BIT0)
+		enable = 0;
+	if (get_kernel_flag() & BIT3)
+		appsbark = 0;
 
 	if (!enable) {
 		/*Turn off watchdog enabled by hboot*/
@@ -304,6 +306,8 @@ static int __init init_watchdog(void)
 	writel(1, WDT0_EN);
 	writel(1, WDT0_RST);
 	last_pet = sched_clock();
+
+	htc_watchdog_monitor_init();
 
 	printk(KERN_INFO "MSM Watchdog Initialized\n");
 

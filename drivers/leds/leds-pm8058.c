@@ -427,14 +427,20 @@ static int pm8058_led_probe(struct platform_device *pdev)
 	ret = -ENOMEM;
 
 	pdata = pdev->dev.platform_data;
+
 	if (pdata == NULL) {
 		pr_err("%s: platform data is NULL\n", __func__);
 		return -ENODEV;
 	}
 
+	if (!pdata->num_leds) {
+		pr_err("%s: LED num is 0\n", __func__);
+		return 0;
+	}
+
 	ldata = kzalloc(sizeof(struct pm8058_led_data)
 			* pdata->num_leds, GFP_KERNEL);
-	if (!ldata && pdata->num_leds) {
+	if (ldata == NULL) {
 		ret = -ENOMEM;
 		pr_err("%s: failed on allocate ldata\n", __func__);
 		goto err_exit;

@@ -16,6 +16,12 @@
 #include <linux/freezer.h>
 #include <linux/delay.h>
 #include <linux/wakelock.h>
+#include "power.h"
+
+#ifdef CONFIG_MSM_WATCHDOG
+extern int msm_watchdog_suspend(void);
+extern int msm_watchdog_resume(void);
+#endif
 
 /* 
  * Timeout for stopping processes
@@ -101,6 +107,10 @@ static int try_to_freeze_tasks(bool sig_only)
 					"(%d tasks refusing to freeze):\n",
 					elapsed_csecs / 100, elapsed_csecs % 100, todo);
 		}
+#ifdef CONFIG_MSM_WATCHDOG
+		/* Suspend wdog until tasks are printed */
+		msm_watchdog_suspend();
+#endif
 		read_lock(&tasklist_lock);
 		do_each_thread(g, p) {
 			task_lock(p);
@@ -111,6 +121,9 @@ static int try_to_freeze_tasks(bool sig_only)
 			task_unlock(p);
 		} while_each_thread(g, p);
 		read_unlock(&tasklist_lock);
+#ifdef CONFIG_MSM_WATCHDOG
+		msm_watchdog_resume();
+#endif
 	} else {
 		printk("(elapsed %d.%02d seconds) ", elapsed_csecs / 100,
 			elapsed_csecs % 100);
@@ -131,7 +144,9 @@ int freeze_processes(void)
 	if (error)
 		goto Exit;
 	printk("done.\n");
-
+	error = suspend_sys_sync_wait();
+	if (error)
+		goto Exit;
 	printk("Freezing remaining freezable tasks ... ");
 	error = try_to_freeze_tasks(false);
 	if (error)

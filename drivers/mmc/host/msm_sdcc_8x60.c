@@ -82,6 +82,12 @@ static int  msmsdcc_dbg_init(void);
 
 static unsigned int msmsdcc_pwrsave = 1;
 
+#define SD_DMA_SET_TLET 0
+#define SD_DMA_RUN_TLET 1
+static unsigned char sd_dma_debug = 0;
+static ktime_t dma_start, dma_diff;
+static ktime_t sd_dma_tick_s, sd_dma_tick_e;
+
 #define DUMMY_52_STATE_NONE		0
 #define DUMMY_52_STATE_SENT		1
 
@@ -141,6 +147,13 @@ msmsdcc_print_status(struct msmsdcc_host *host, char *hdr, uint32_t status)
 	pr_debug("\n");
 }
 
+static int is_mmc_platform(struct mmc_platform_data *plat)
+{
+	if (plat->slot_type && *plat->slot_type == MMC_TYPE_MMC)
+		return 1;
+
+	return 0;
+}
 static int is_svlte_platform(struct mmc_platform_data *plat)
 {
 	if (plat->slot_type && *plat->slot_type == MMC_TYPE_SDIO_SVLTE)
@@ -369,6 +382,12 @@ msmsdcc_start_command_exec(struct msmsdcc_host *host, u32 arg, u32 c)
 	 * Kick the software command timeout timer here.
 	 * Timer expires in MSM_MMC_REQ_TIMEOUT secs.
 	 */
+	if (host->mmc->card && host->mmc->card->type == MMC_TYPE_SD)
+	{
+		sd_dma_debug = 0;
+		sd_dma_tick_s = ktime_get();
+	}
+
 	if (is_svlte_platform(host->plat) || is_wimax_platform(host->plat))
 		mod_timer(&host->req_tout_timer,
 			(jiffies + msecs_to_jiffies(5000)));
@@ -405,7 +424,15 @@ msmsdcc_dma_complete_tlet(unsigned long data)
 	struct msmsdcc_host *host = (struct msmsdcc_host *)data;
 	unsigned long		flags;
 	struct mmc_request	*mrq;
-
+	int sd_dma_tick;
+	if (host->mmc->card && host->mmc->card->type == MMC_TYPE_SD) {
+		dma_diff = ktime_sub(ktime_get(), dma_start);
+		sd_dma_debug |= 1 << SD_DMA_RUN_TLET;
+		sd_dma_tick_e = ktime_sub(ktime_get(), sd_dma_tick_s);
+		sd_dma_tick = (int) ktime_to_ms(sd_dma_tick_e);
+		if (sd_dma_tick >= 3000)
+			pr_info("SD_DMA tasklet time >= %d millisconds\n", sd_dma_tick);
+	}
 	spin_lock_irqsave(&host->lock, flags);
 	mrq = host->curr.mrq;
 	BUG_ON(!mrq);
@@ -487,7 +514,10 @@ msmsdcc_dma_complete_func(struct msm_dmov_cmd *cmd,
 	struct msmsdcc_dma_data	*dma_data =
 		container_of(cmd, struct msmsdcc_dma_data, hdr);
 	struct msmsdcc_host *host = dma_data->host;
-
+	if (host->mmc->card && host->mmc->card->type == MMC_TYPE_SD) {
+		dma_start = ktime_get();
+		sd_dma_debug |= 1 << SD_DMA_SET_TLET;
+	}
 	dma_data->result = result;
 	if (err)
 		memcpy(&dma_data->err, err, sizeof(struct msm_dmov_errdata));
@@ -1275,7 +1305,6 @@ msmsdcc_request(struct mmc_host *mmc, struct mmc_request *mrq)
 
 	spin_lock_irqsave(&host->lock, flags);
 	host->irq_counter = 0;
-
 	if (host->eject) {
 		if (mrq->data && !(mrq->data->flags & MMC_DATA_READ)) {
 			mrq->cmd->error = 0;
@@ -1295,15 +1324,15 @@ msmsdcc_request(struct mmc_host *mmc, struct mmc_request *mrq)
 	/*
 	 * Enable clocks if they are already turned off
 	 */
-	if (mmc->card && !host->clks_on) {
-		if (host->sdcc_irq_disabled) {
-			enable_irq(host->irqres->start);
-			host->sdcc_irq_disabled = 0;
-		}
+	if (!host->clks_on)
 		msmsdcc_switch_clock(host->mmc, 1);
-	}
 
+	if (host->sdcc_irq_disabled) {
+		enable_irq(host->irqres->start);
+		host->sdcc_irq_disabled = 0;
+	}
 	WARN_ON(host->clks_on == 0);
+	WARN_ON(host->sdcc_irq_disabled == 1);
 
 	if (host->plat->dummy52_required) {
 		if (host->dummy_52_needed) {
@@ -1585,9 +1614,8 @@ static int msmsdcc_enable(struct mmc_host *mmc)
 	struct msmsdcc_host *host = mmc_priv(mmc);
 
 	if (atomic_read(&dev->power.usage_count) > 0) {
-		if (host->clks_on == 0) {
+		if (host->clks_on == 0 || host->sdcc_irq_disabled)
 			msmsdcc_runtime_resume(dev);
-		}
 		pm_runtime_get_noresume(dev);
 		goto out;
 	}
@@ -1846,9 +1874,14 @@ static void msmsdcc_req_tout_timer_hdlr(unsigned long data)
 	struct mmc_request *mrq;
 	unsigned long flags;
 	int i;
-
-	pr_info("%s: %s, pwr %d, clks_on %d\n", mmc_hostname(host->mmc),
-		__func__, host->pwr, host->clks_on);
+	if (host->mmc->card && host->mmc->card->type == MMC_TYPE_SD) {
+		if (sd_dma_debug == 3)
+			pr_info("%s DMA tasklet schedule time = %lld microseconds, dma_debug = %x\n", mmc_hostname(host->mmc), ktime_to_us(dma_diff), sd_dma_debug);
+		else
+			pr_info("%s dma_debug = %x, MMCISTATUS = %x\n", mmc_hostname(host->mmc), sd_dma_debug, readl(host->base + MMCISTATUS));
+	}
+	pr_info("%s: %s, pwr %d, clks_on %d, irq_disabled %d\n", mmc_hostname(host->mmc),
+		__func__, host->pwr, host->clks_on, host->sdcc_irq_disabled);
 	pr_info("%s: intmask0 0x%x, mciclock 0x%x\n", mmc_hostname(host->mmc),
 		readl(host->base + MMCIMASK0), readl(host->base + MMCICLOCK));
 	for (i = 0; i < host->irq_counter; i++)
@@ -1907,7 +1940,7 @@ msmsdcc_probe(struct platform_device *pdev)
 	struct resource *irqres = NULL;
 	struct resource *memres = NULL;
 	struct resource *dmares = NULL;
-	int ret;
+	int ret = 0;
 	int i;
 
 	/* must have platform data */
@@ -2536,8 +2569,13 @@ msmsdcc_runtime_resume(struct device *dev)
 
 static int msmsdcc_runtime_idle(struct device *dev)
 {
+	struct mmc_host *mmc = dev_get_drvdata(dev);
+	struct msmsdcc_host *host = mmc_priv(mmc);
 	/* Idle timeout is not configurable for now */
-	pm_schedule_suspend(dev, MSM_MMC_IDLE_TIMEOUT);
+	if (is_mmc_platform(host->plat))
+		pm_schedule_suspend(dev, MSM_EMMC_IDLE_TIMEOUT);
+	else
+		pm_schedule_suspend(dev, MSM_MMC_IDLE_TIMEOUT);
 
 	return -EAGAIN;
 }

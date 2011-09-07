@@ -957,6 +957,25 @@ int dhd_set_pktfilter(dhd_pub_t * dhd, int add, int id, int offset, char *mask, 
 #define WLC_HT_WEP_RESTRICT		0x01 	/* restrict HT with TKIP */
 #define WLC_HT_TKIP_RESTRICT	0x02 	/* restrict HT with WEP */
 
+//HTC_CSP_START
+/* traffic indicate parameters */
+/* The throughput mapping to packet count is as below:
+ *  2Mbps: ~280 packets / second
+ *  4Mbps: ~540 packets / second
+ *  6Mbps: ~800 packets / second
+ *  8Mbps: ~1200 packets / second
+ * 12Mbps: ~1500 packets / second
+ * 14Mbps: ~1800 packets / second
+ * 16Mbps: ~2000 packets / second
+ * 18Mbps: ~2300 packets / second
+ * 20Mbps: ~2600 packets / second
+ */
+
+#define TRAFFIC_HIGH_WATER_MARK                670 *(3000/1000)
+#define TRAFFIC_LOW_WATER_MARK          280 * (3000/1000)
+
+//HTC_CSP_END
+
 int
 dhd_preinit_ioctls(dhd_pub_t *dhd)
 {
@@ -1210,6 +1229,22 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	bcm_mkiovar("scanresults_minrssi", (char *)&ret, 4, iovbuf, sizeof(iovbuf));
 	dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, iovbuf, sizeof(iovbuf));
 
+//HTC_CSP_START
+	/* Lock CPU frequency to improve hotspot throughput*/
+	ret = 3;
+	bcm_mkiovar("tc_period", (char *)&ret, 4, iovbuf, sizeof(iovbuf));
+	dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, iovbuf, sizeof(iovbuf));
+	ret = TRAFFIC_LOW_WATER_MARK;
+	bcm_mkiovar("tc_lo_wm", (char *)&ret, 4, iovbuf, sizeof(iovbuf));
+	dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, iovbuf, sizeof(iovbuf));
+	ret = TRAFFIC_HIGH_WATER_MARK;
+	bcm_mkiovar("tc_hi_wm", (char *)&ret, 4, iovbuf, sizeof(iovbuf));
+	dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, iovbuf, sizeof(iovbuf));
+	ret = 1;
+	bcm_mkiovar("tc_enable", (char *)&ret, 4, iovbuf, sizeof(iovbuf));
+	dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, iovbuf, sizeof(iovbuf));
+//HTC_CSP_END
+
 	dhd_os_proto_unblock(dhd);
 
 	return 0;
@@ -1354,6 +1389,10 @@ int dhd_keep_alive_onoff(dhd_pub_t *dhd, int ka_on)
 	int str_len, buf_len;
 	int res = 0;
 	int keep_alive_period = KEEP_ALIVE_PERIOD; /* in ms */
+
+#ifdef HTC_KlocWork
+	memset(&keep_alive_pkt, 0, sizeof(keep_alive_pkt));
+#endif
 
 	DHD_TRACE(("%s: ka:%d\n", __FUNCTION__, ka_on));
 

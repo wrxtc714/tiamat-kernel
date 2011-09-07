@@ -107,10 +107,10 @@ enum {		/* mipi dsi panel */
 extern struct device dsi_dev;
 
 struct dsi_clk_desc {
-	uint32 src;
-	uint32 m;
-	uint32 n;
-	uint32 d;
+	uint32_t src;
+	uint32_t m;
+	uint32_t n;
+	uint32_t d;
 };
 
 #define DSI_HOST_HDR_SIZE	4
@@ -129,7 +129,7 @@ struct dsi_clk_desc {
 #define MIPI_DSI_REG_LEN 16 /* 4 x 4 bytes register */
 
 struct dsi_buf {
-	uint32 *hdr;	/* dsi host header */
+	uint32_t *hdr;	/* dsi host header */
 	char *start;	/* buffer start addr */
 	char *end;	/* buffer end addr */
 	int size;	/* size of buffer */
@@ -174,7 +174,7 @@ struct dsi_cmd_desc {
 	int dlen;
 	char *payload;
 };
-
+struct mipi_panel_info;
 
 /* MIPI_DSI_MRPS, Maximum Return Packet Size */
 extern char max_pktsize[2]; /* defined at mipi_dsi.c */
@@ -186,7 +186,7 @@ int mipi_dsi_buf_alloc(struct dsi_buf *, int size);
 int mipi_dsi_cmd_dma_add(struct dsi_buf *dp, struct dsi_cmd_desc *cm);
 int mipi_dsi_cmds_tx(struct dsi_buf *dp, struct dsi_cmd_desc *cmds, int cnt);
 int mipi_dsi_cmd_dma_tx(struct dsi_buf *dp);
-int mipi_dsi_cmd_reg_tx(uint32 data);
+int mipi_dsi_cmd_reg_tx(uint32_t data);
 int mipi_dsi_cmds_rx(struct dsi_buf *tp, struct dsi_buf *rp,
 				struct dsi_cmd_desc *cmds, int len);
 int mipi_dsi_cmd_dma_rx(struct dsi_buf *tp, int rlen);

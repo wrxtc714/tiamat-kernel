@@ -193,10 +193,15 @@
 #define SHOOTER_SP3D_CORE_GATE         (58)
 #define SHOOTER_SP3D_SYS_RST           (102)
 #define SHOOTER_SP3D_PDX               (137)
-#define SHOOTER_SP3D_MCLK           (32)
-#define SHOOTER_WEBCAM_STB          (140)
-#define SHOOTER_WEBCAM_RST           (138)
-#define SHOOTER_CAM_SEL           (141)
+
+#define SHOOTER_S5K4E1_PD				(137)
+#define SHOOTER_S5K4E1_INTB				(102)
+#define SHOOTER_S5K4E1_VCM_PD			(58)
+
+#define SHOOTER_SP3D_MCLK		(32)
+#define SHOOTER_WEBCAM_STB		(140)
+#define SHOOTER_WEBCAM_RST		(138)
+#define SHOOTER_CAM_SEL			(141)
 
 
 /* LCM */

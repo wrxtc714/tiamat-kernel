@@ -1855,7 +1855,7 @@ kgsl_drawctxt_switch(struct kgsl_yamato_device *yamato_device,
 
 		/* restore registers and constants. */
 		KGSL_CTXT_DBG("restore regs");
-		kgsl_ringbuffer_issuecmds(device, 0,
+		kgsl_ringbuffer_issuecmds(device, KGSL_CMD_FLAGS_CONTEXT_CHANGE,
 					  drawctxt->reg_restore, 3);
 
 		/* restore shader instructions & partitioning. */

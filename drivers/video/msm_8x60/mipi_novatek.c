@@ -210,12 +210,19 @@ static char display_off[2] = {0x28, 0x00}; /* DTYPE_DCS_WRITE */
 static char display_on[2] = {0x29, 0x00}; /* DTYPE_DCS_WRITE */
 static char enable_te[2] = {0x35, 0x00};/* DTYPE_DCS_WRITE1 */
 static char test_reg[3] = {0x44, 0x02, 0xCF};/* DTYPE_DCS_WRITE1 */
+static char test_reg_qhd[3] = {0x44, 0x01, 0x3f};/* DTYPE_DCS_LWRITE */
 //static char pixel_off[2] = {0x22, 0x00}; /* DTYPE_DCS_WRITE */
 //static char normal_on[2] = {0x13, 0x00}; /* DTYPE_DCS_WRITE */
 //static char set_onelane[2] = {0xae, 0x01}; /* DTYPE_DCS_WRITE1 */
 static char set_twolane[2] = {0xae, 0x03}; /* DTYPE_DCS_WRITE1 */
 static char rgb_888[2] = {0x3A, 0x77}; /* DTYPE_DCS_WRITE1 */
 /* commands by Novatke */
+static char novatek_fd[2] = {0xfd, 0x01}; /* DTYPE_DCS_WRITE */
+static char novatek_eq1200[4] = {0x92, 0x00, 0xA2, 0x4C}; /* DTYPE_DCS_WRITE */
+static char novatek_2vci[2] = {0x03, 0x33}; /* DTYPE_DCS_WRITE */
+static char novatek_f3[2] = {0xF3, 0xAA }; /* DTYPE_DCS_WRITE1 */
+static char novatek_ff_aa[2] = {0xff, 0xAA }; /* DTYPE_DCS_WRITE1 */
+
 static char novatek_f4[2] = {0xf4, 0x55}; /* DTYPE_DCS_WRITE1 */
 static char novatek_8c[16] = { /* DTYPE_DCS_LWRITE */
 	0x8C, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -1253,6 +1260,22 @@ static struct dsi_cmd_desc auo_nov_cmd_on_cmds[] = {
 static struct dsi_cmd_desc shr_sharp_cmd_on_cmds[] = {
 	{DTYPE_DCS_WRITE, 1, 0, 0, 10,
 		sizeof(sw_reset), sw_reset},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_f4), novatek_f4},
+	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
+		sizeof(novatek_eq1200), novatek_eq1200},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_fd), novatek_fd},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_ff), novatek_ff},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_f3), novatek_f3},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_2vci), novatek_2vci},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_pwm_cp2), novatek_pwm_cp2},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_ff_aa), novatek_ff_aa},
 	{DTYPE_DCS_WRITE, 1, 0, 0, 120,
 		sizeof(exit_sleep), exit_sleep},
 	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
@@ -1278,17 +1301,17 @@ static struct dsi_cmd_desc shr_sharp_cmd_on_cmds[] = {
 	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
 		sizeof(enable_te), enable_te},
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
-		sizeof(test_reg), test_reg},
+		sizeof(test_reg_qhd), test_reg_qhd},
 //	{DTYPE_DCS_WRITE, 1, 0, 0, 50,
 //		sizeof(display_off), display_off},
 	{DTYPE_MAX_PKTSIZE, 1, 0, 0, 0,
 		sizeof(max_pktsize), max_pktsize},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
-		sizeof(novatek_f4), novatek_f4},
-	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
-		sizeof(novatek_8c), novatek_8c},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
-		sizeof(novatek_ff), novatek_ff},
+	//{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+	//	sizeof(novatek_f4), novatek_f4},
+	//{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
+	//	sizeof(novatek_8c), novatek_8c},
+	//{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+	//	sizeof(novatek_ff), novatek_ff},
 	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
 		sizeof(set_twolane), set_twolane},
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
@@ -1854,6 +1877,20 @@ static void mipi_novatek_display_on(struct msm_fb_data_type *mfd)
 	mutex_unlock(&cmdlock);
 }
 
+static int mipi_novatek_send_cmds(struct dsi_cmd_desc *novatek_cmds, uint32_t size)
+{
+	pr_debug("%s+\n", __func__);
+	mutex_lock(&cmdlock);
+	if (mipi_status == 0)
+		goto end;
+	mipi_dsi_op_mode_config(DSI_CMD_MODE);
+	mipi_dsi_cmds_tx(&novatek_tx_buf, novatek_cmds, size);
+end:
+	mutex_unlock(&cmdlock);
+	pr_debug("%s-\n", __func__);
+	return 0;
+}
+
 static void mipi_novatek_bkl_switch(struct msm_fb_data_type *mfd, bool on)
 {
 	unsigned int val = 0;
@@ -1895,8 +1932,12 @@ static void mipi_novatek_bkl_ctrl(bool on)
 
 static int mipi_novatek_lcd_probe(struct platform_device *pdev)
 {
+	struct msm_fb_data_type *mfd;
+	mfd = platform_get_drvdata(pdev);
 	if (pdev->id == 0) {
 		mipi_novatek_pdata = pdev->dev.platform_data;
+		if (mipi_novatek_pdata)
+			mipi_novatek_pdata->mipi_send_cmds = mipi_novatek_send_cmds;
 		mutex_init(&cmdlock);
 		return 0;
 	}

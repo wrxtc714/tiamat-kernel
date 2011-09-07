@@ -607,6 +607,8 @@ int __init board_mfg_mode_init(char *s)
 		mfg_mode = 4;
 	else if (!strcmp(s, "offmode_charging"))
 		mfg_mode = 5;
+	else if (!strcmp(s, "mfgkernel:diag58"))
+		mfg_mode = 6;
 
 	return 1;
 }

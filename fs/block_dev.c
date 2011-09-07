@@ -238,7 +238,8 @@ struct super_block *freeze_bdev(struct block_device *bdev)
 		 * thaw_bdev drops it.
 		 */
 		sb = get_super(bdev);
-		drop_super(sb);
+		if (sb)
+			drop_super(sb);
 		mutex_unlock(&bdev->bd_fsfreeze_mutex);
 		return sb;
 	}
@@ -1119,7 +1120,8 @@ static int bd_claim_by_kobject(struct block_device *bdev, void *holder,
 		bo = NULL;
 fail:
 	mutex_unlock(&bdev->bd_mutex);
-	free_bd_holder(bo);
+	if (bo)
+		free_bd_holder(bo);
 	return err;
 }
 

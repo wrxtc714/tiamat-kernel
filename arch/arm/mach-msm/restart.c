@@ -139,6 +139,7 @@ static void msm_power_off(void)
 	writel(32768 * 12, WDT0_BARK_TIME);
 	writel(32768 * 12, WDT0_BITE_TIME);
 	writel(3, WDT0_EN);
+	dsb();
 	wait_rmt_final_call_back(10);
 	/* Rest watchdog timer to make sure we have enough time to power off */
 	writel(1, WDT0_RST);
@@ -254,6 +255,7 @@ void arch_reset(char mode, const char *cmd)
 		writel(32768 * 12, WDT0_BARK_TIME);
 		writel(32768 * 13, WDT0_BITE_TIME);
 		writel(3, WDT0_EN);
+		dsb();
 		if (in_panic) {
 			rmt_storage_set_msm_client_status(0);
 			smsm_change_state(SMSM_APPS_STATE, SMSM_APPS_REBOOT, SMSM_APPS_REBOOT);
@@ -307,7 +309,7 @@ void arch_reset(char mode, const char *cmd)
 	writel(0x31F3, WDT0_BARK_TIME);
 	writel(0x31F3, WDT0_BITE_TIME);
 	writel(3, WDT0_EN);
-	dmb();
+	dsb();
 	secure_writel(3, MSM_TCSR_BASE + TCSR_WDT_CFG);
 
 	mdelay(10000);

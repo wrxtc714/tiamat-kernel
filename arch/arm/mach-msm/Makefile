@@ -3,6 +3,7 @@ obj-y += io.o dma.o memory.o
 ifdef CONFIG_ARCH_MSM8X60
 obj-y += timer-8x60.o clock-core.o clock-voter.o
 obj-$(CONFIG_MSM_WATCHDOG) += msm_watchdog.o
+obj-$(CONFIG_MSM_WATCHDOG) += htc_watchdog_monitor.o
 else
 obj-y += timer.o clock.o
 endif
@@ -389,6 +390,11 @@ obj-$(CONFIG_MACH_RIDER) += htc_bdaddress.o htc_sleep_clk.o board-rider-rfkill.o
 obj-$(CONFIG_MACH_RIDER) += board-common-wimax.o board-rider-mmc.o board-rider-wifi.o
 obj-$(CONFIG_MACH_RIDER) += board-rider-keypad.o
 obj-$(CONFIG_MACH_RIDER) += display/rider-panel.o
+obj-$(CONFIG_MACH_SHOOTER_K) += board-shooter_k.o board-shooter_k-audio.o
+obj-$(CONFIG_MACH_SHOOTER_K) += htc_bdaddress.o htc_sleep_clk.o board-shooter_k-rfkill.o
+obj-$(CONFIG_MACH_SHOOTER_K) += board-common-wimax.o board-shooter_k-mmc.o board-shooter_k-wifi.o
+obj-$(CONFIG_MACH_SHOOTER_K) += board-shooter_k-keypad.o
+obj-$(CONFIG_MACH_SHOOTER_K) += display/shooter_k-panel.o
 obj-$(CONFIG_MACH_SHOOTER_U) += board-shooter_u.o board-shooter_u-audio.o
 obj-$(CONFIG_MACH_SHOOTER_U) += htc_bdaddress.o htc_sleep_clk.o board-shooter_u-rfkill.o
 obj-$(CONFIG_MACH_SHOOTER_U) += board-shooter_u-mmc.o board-shooter_u-wifi.o

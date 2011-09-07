@@ -995,19 +995,26 @@ static ssize_t fm_flag_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	char *s = buf;
-	char *show_str;
+	char *state;
 
 	HS_DBG();
 
 	mutex_lock(&hi->mutex_lock);
-	if (hi->fm_flag == 0)
-		show_str = "disable";
-	if (hi->fm_flag == 1)
-		show_str = "fm_headset";
-	if (hi->fm_flag == 2)
-		show_str = "fm_speaker";
+	switch (hi->fm_flag) {
+	case 0:
+		state = "disable";
+		break;
+	case 1:
+		state = "fm_headset";
+		break;
+	case 2:
+		state = "fm_speaker";
+		break;
+	default:
+		state = "unknown_fm_status";
+	}
 
-	s += sprintf(s, "%s\n", show_str);
+	s += sprintf(s, "%s\n", state);
 	mutex_unlock(&hi->mutex_lock);
 	return (s - buf);
 }

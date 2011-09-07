@@ -15,6 +15,7 @@
 #include <linux/stop_machine.h>
 #include <linux/mutex.h>
 #include <linux/gfp.h>
+#include <linux/delay.h>
 
 #ifdef CONFIG_SMP
 /* Serializes the updates to cpu_online_mask, cpu_present_mask */
@@ -229,6 +230,9 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen)
 		.mod = mod,
 		.hcpu = hcpu,
 	};
+	unsigned long timeout;
+	unsigned long flags;
+	struct task_struct *g, *p;
 
 	if (num_online_cpus() == 1)
 		return -EBUSY;
@@ -259,9 +263,22 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen)
 	}
 	BUG_ON(cpu_online(cpu));
 
+	timeout = jiffies + HZ;
 	/* Wait for it to sleep (leaving idle task). */
-	while (!idle_cpu(cpu))
-		yield();
+	while (!idle_cpu(cpu)) {
+		msleep(1);
+		if (time_after(jiffies, timeout)) {
+			printk("%s: CPU%d not idle after offline. Running tasks:\n", __func__, cpu);
+			read_lock_irqsave(&tasklist_lock, flags);
+			do_each_thread(g, p) {
+				if (!p->se.on_rq || task_cpu(p) != cpu)
+					continue;
+				sched_show_task(p);
+			} while_each_thread(g, p);
+			read_unlock_irqrestore(&tasklist_lock, flags);
+			timeout = jiffies + HZ;
+		}
+	}
 
 	/* This actually kills the CPU. */
 	__cpu_die(cpu);

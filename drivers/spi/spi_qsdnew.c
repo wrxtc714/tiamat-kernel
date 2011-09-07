@@ -165,7 +165,7 @@ enum msm_spi_state {
 #define SPI_NUM_CHIPSELECTS           4
 #define SPI_SUPPORTED_MODES  (SPI_CPOL | SPI_CPHA | SPI_CS_HIGH | SPI_LOOP)
 
-#define SPI_DELAY_THRESHOLD           1
+#define SPI_DELAY_THRESHOLD           5
 /* Default timeout is 10 milliseconds */
 #define SPI_DEFAULT_TIMEOUT           10
 /* 250 microseconds */
@@ -266,14 +266,14 @@ struct msm_spi {
 	u32                      rx_bytes_remaining;
 	u32                      tx_bytes_remaining;
 	u32                      clock_speed;
-	u32                      irq_in;
+	int                      irq_in;
 	int                      read_xfr_cnt;
 	int                      write_xfr_cnt;
 	int                      write_len;
 	int                      read_len;
 #if defined(CONFIG_SPI_QSD) || defined(CONFIG_SPI_QSD_MODULE)
-	u32                      irq_out;
-	u32                      irq_err;
+	int                      irq_out;
+	int                      irq_err;
 #endif
 	int                      bytes_per_word;
 	bool                     suspended;
@@ -763,7 +763,8 @@ static inline int msm_spi_wait_valid(struct msm_spi *dd)
 	timeout = jiffies + msecs_to_jiffies(delay * SPI_DEFAULT_TIMEOUT);
 	while (!msm_spi_is_valid_state(dd)) {
 		if (time_after(jiffies, timeout)) {
-			dd->cur_msg->status = -EIO;
+			if (dd->cur_msg)
+				dd->cur_msg->status = -EIO;
 			dev_err(dd->dev, "QUP_SPI_ERR: %s: SPI operational state not valid"
 				"\n", __func__);
 			return -1;

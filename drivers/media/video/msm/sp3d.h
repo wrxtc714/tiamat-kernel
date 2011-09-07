@@ -256,7 +256,11 @@ struct sp3d_com_feature_reg{
 	struct sp3d_reg_conf const *reg_koj_sharpness_1;
 	uint16_t reg_koj_sharpness_1_size;
 	struct sp3d_reg_conf const *reg_koj_sharpness_2;
-	uint16_t reg_koj_sharpness_2_size;	
+	uint16_t reg_koj_sharpness_2_size;
+	struct sp3d_reg_conf const *reg_koj_sharpness_3;
+	uint16_t reg_koj_sharpness_3_size;
+	struct sp3d_reg_conf const *reg_koj_sharpness_4;
+	uint16_t reg_koj_sharpness_4_size;
 	struct sp3d_reg_conf const *reg_koj_sharpness_neg1;
 	uint16_t reg_koj_sharpness_neg1_size;	
 	struct sp3d_reg_conf const *reg_koj_sharpness_neg2;

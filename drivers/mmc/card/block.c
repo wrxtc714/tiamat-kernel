@@ -610,7 +610,7 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 #ifdef CONFIG_MMC_PERF_PROFILING
 		if (mmc_card_sd(card)) {
 				diff = ktime_sub(ktime_get(), start);
-				if (ktime_to_us(diff) > 100000)
+				if (ktime_to_us(diff) > 150000)
 					printk(KERN_DEBUG "%s: ---(%s) start sector=%d, size %d, total time=%lld microseconds\n", __func__, current->comm, brq.cmd.arg, blk_rq_sectors(req) , ktime_to_us(diff));
 		}
 #endif

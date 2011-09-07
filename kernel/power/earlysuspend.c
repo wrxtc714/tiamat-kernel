@@ -95,6 +95,7 @@ static void early_suspend(struct work_struct *work)
 	struct early_suspend *pos;
 	unsigned long irqflags;
 	int abort = 0;
+
 	pr_info("[R] early_suspend start\n");
 	mutex_lock(&early_suspend_lock);
 	spin_lock_irqsave(&state_lock, irqflags);
@@ -128,11 +129,7 @@ static void early_suspend(struct work_struct *work)
 
 	pr_info("[R] early_suspend: sync\n");
 
-#ifdef CONFIG_SYS_SYNC_BLOCKING_DEBUG
-	sys_sync_debug();
-#else
-	sys_sync();
-#endif
+	suspend_sys_sync_queue();
 
 	if (debug_mask & DEBUG_NO_SUSPEND) {
 		pr_info("DEBUG_NO_SUSPEND set, will not suspend\n");

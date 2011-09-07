@@ -881,7 +881,10 @@ static const struct s5k6aafx_i2c_reg_conf const analog_setting_init_tbl_cob[] = 
 	{S5K6AAFX_REG_WR, 0x0004},
 	{S5K6AAFX_REG_WR, 0x0005},
 	{S5K6AAFX_REG_WR, 0x0005},
-
+	{0x002A, 0x0104},
+	{0x0F12, 0x0C2F},
+	{0x002A, 0x10EA},
+	{0x0F12, 0x007C},
 	{0x1000, 0x0001}, /* Set host interrupt so main start run */
 
 	/* delay 10ms */
@@ -1977,7 +1980,7 @@ static const struct s5k6aafx_i2c_reg_conf const register_init_tbl_cob[] = {
 	{S5K6AAFX_REG_WR, 0x014C}, /*TVAR_afit_pBaseVals[57]    7000089A */
 	{S5K6AAFX_REG_WR, 0x014D}, /*TVAR_afit_pBaseVals[58]    7000089C */
 	{S5K6AAFX_REG_WR, 0x0100}, /*TVAR_afit_pBaseVals[59]    7000089E */
-	{S5K6AAFX_REG_WR, 0xA01c/*0x8020*/}, /*TVAR_afit_pBaseVals[60]    700008A0 */ //CKLIN_20100908 White level low brightness 2.5 pass
+	{S5K6AAFX_REG_WR, 0x8020/*0x8020*/}, /*TVAR_afit_pBaseVals[60]    700008A0 */ //CKLIN_20100908 White level low brightness 2.5 pass
 	{S5K6AAFX_REG_WR, 0x0180}, /*TVAR_afit_pBaseVals[61]    700008A2 */
 	{S5K6AAFX_REG_WR, 0x0001/*0x000A*/}, /*TVAR_afit_pBaseVals[62]    700008A4 */ //CKLIN_20100908 Black Noise pass
 
@@ -2363,12 +2366,12 @@ static const struct s5k6aafx_i2c_reg_conf const mipi_clk_init_tbl_cob[] = {
 	{S5K6AAFX_REG_WR, 0x0000}, /* REG_TC_IPRM_UseNPviClocks */
 	{S5K6AAFX_REG_WR, 0x0002}, /* REG_TC_IPRM_UseNMipiClocks - 1 MIPI configurations */
 	{S5K6AAFX_REG_W_ADDL, 0x01CC},
-	{S5K6AAFX_REG_WR, 0x1B58}, /* 1st system CLK 24MHz */
-	{S5K6AAFX_REG_WR, 0x1770}, /* 48MHz output clock */
-	{S5K6AAFX_REG_WR, 0x1B58},
-	{S5K6AAFX_REG_WR, 0x1B58}, /* 2nd system CLK */
-	{S5K6AAFX_REG_WR, 0x36B0},
-	{S5K6AAFX_REG_WR, 0x36B0},
+	{S5K6AAFX_REG_WR, 0x1B58}, /* 1st system CLK 24MHz *//*VGA*/
+	{S5K6AAFX_REG_WR, 0x30D4}, /* 48MHz output clock */
+	{S5K6AAFX_REG_WR, 0x30D4},
+	{S5K6AAFX_REG_WR, 0x1B58}, /* 2nd system CLK *//*HD*/
+	{S5K6AAFX_REG_WR, 0x30D4},
+	{S5K6AAFX_REG_WR, 0x30D4},
 
 	{S5K6AAFX_REG_W_ADDL, 0x01E0},
 	{S5K6AAFX_REG_WR, 0x0001},
@@ -2405,8 +2408,8 @@ static const struct s5k6aafx_i2c_reg_conf const prev_snap_conf_init_tbl_cob[] = 
 	{S5K6AAFX_REG_W_ADDL, 0x02C0},
 	{S5K6AAFX_REG_WR, 0x0000}, /* PLL config */
 	{S5K6AAFX_REG_W_ADDL, 0x02BA},
-	{S5K6AAFX_REG_WR, 0x1B58}, /* REG_0TC_PCFG_usMaxOut4KHzRate */
-	{S5K6AAFX_REG_WR, 0x1770}, /* REG_0TC_PCFG_usMinOut4KHzRate */
+	{S5K6AAFX_REG_WR, 0x30D4}, /* REG_0TC_PCFG_usMaxOut4KHzRate *//*VGA*/
+	{S5K6AAFX_REG_WR, 0x30D4}, /* REG_0TC_PCFG_usMinOut4KHzRate *//*VGA*/
 	{S5K6AAFX_REG_WR, 0x0042},
 	{S5K6AAFX_REG_W_ADDL, 0x02C4},
 	{S5K6AAFX_REG_WR, 0x0001}, /* 1b: Avg S.S 2b: SXGA */
@@ -2427,8 +2430,8 @@ static const struct s5k6aafx_i2c_reg_conf const prev_snap_conf_init_tbl_cob[] = 
 	{S5K6AAFX_REG_W_ADDL, 0x0274},
 	{S5K6AAFX_REG_WR, 0x0000}, /* PLL config */
 	{S5K6AAFX_REG_W_ADDL, 0x026E},
-	{S5K6AAFX_REG_WR, 0x1770},
-	{S5K6AAFX_REG_WR, 0x1700},
+	{S5K6AAFX_REG_WR, 0x30D4},
+	{S5K6AAFX_REG_WR, 0x30D4},
 	{S5K6AAFX_REG_WR, 0x0042},
 	{S5K6AAFX_REG_W_ADDL, 0x0278},
 	{S5K6AAFX_REG_WR, 0x0002}, /* 1b: Avg S.S 2b: SXGA */
@@ -2450,8 +2453,8 @@ static const struct s5k6aafx_i2c_reg_conf const prev_snap_conf_init_tbl_cob[] = 
 	{S5K6AAFX_REG_W_ADDL, 0x024E},
 	{S5K6AAFX_REG_WR, 0x0001}, /* PLL config */
 	{S5K6AAFX_REG_W_ADDL, 0x0248},
-	{S5K6AAFX_REG_WR, 0x36B0}, /* REG_0TC_PCFG_usMaxOut4KHzRate */
-	{S5K6AAFX_REG_WR, 0x36B0}, /* REG_0TC_PCFG_usMinOut4KHzRate */
+	{S5K6AAFX_REG_WR, 0x30D4}, /* REG_0TC_PCFG_usMaxOut4KHzRate *//*HD*/
+	{S5K6AAFX_REG_WR, 0x30D4}, /* REG_0TC_PCFG_usMinOut4KHzRate *//*HD*/
 	{S5K6AAFX_REG_WR, 0x0042}, /* REG_0TC_PCFG_PVIMask */
 	{S5K6AAFX_REG_W_ADDL, 0x0252},
 	{S5K6AAFX_REG_WR, 0x0002}, /* REG_0TC_PCFG_FrRateQualityType */
@@ -2463,32 +2466,15 @@ static const struct s5k6aafx_i2c_reg_conf const prev_snap_conf_init_tbl_cob[] = 
 	{S5K6AAFX_REG_W_ADDL, 0x0262}, /* flip and mirror */
 	{S5K6AAFX_REG_WR, 0x0003}, /* 0x0262 value */
 	{S5K6AAFX_REG_WR, 0x0003}, /* 0x0262 value */
-
+#if 0
+	/* Preview */
 	{S5K6AAFX_REG_W_ADDL, 0x03B6},
 	{S5K6AAFX_REG_WR, 0x0000},
-	/* MIPI Setting */
 	{S5K6AAFX_REG_W_ADDL, 0x03FA},
 	{S5K6AAFX_REG_WR, 0x0001}, /* REG_TC_OIF_EnMipiLanes */
 	{S5K6AAFX_REG_WR, 0x00C3}, /* REG_TC_OIF_EnPackets */
 	{S5K6AAFX_REG_WR, 0x0001}, /* REG_TC_OIF_CfgChanged */
-
-	/*********** APPLY PREVIEW CONFIGURATION & RUN PREVIEW ***********/
-	/* REG_TC_GP_ActivePrevConfig-Select preview configuration_3 */
-	{S5K6AAFX_REG_W_ADDL, 0x021C},
-	{S5K6AAFX_REG_WR, 0x0003},
-	/* REG_TC_GP_PrevOpenAfterChange */
-	{S5K6AAFX_REG_W_ADDL, 0x0220},
-	{S5K6AAFX_REG_WR, 0x0001},
-	/* REG_TC_GP_NewConfigSync-Update preview configuration */
-	{S5K6AAFX_REG_W_ADDL, 0x01F8},
-	{S5K6AAFX_REG_WR, 0x0001},
-	/* REG_TC_GP_PrevConfigChanged */
-	{S5K6AAFX_REG_W_ADDL, 0x021E},
-	{S5K6AAFX_REG_WR, 0x0001}, /* Enable output after config change */
-	{S5K6AAFX_REG_W_ADDL, 0x01F0},
-	{S5K6AAFX_REG_WR, 0x0001}, /* REG_TC_GP_EnablePreview - Start preview */
-	{S5K6AAFX_REG_WR, 0x0001}, /* REG_TC_GP_EnablePreviewChanged */
-
+#endif
 
 	/* CAPTURE CONFIGURATION 0 (SXGA, YUV) */
 	{S5K6AAFX_REG_W_ADDL, 0x030E},
@@ -2498,8 +2484,8 @@ static const struct s5k6aafx_i2c_reg_conf const prev_snap_conf_init_tbl_cob[] = 
 	{S5K6AAFX_REG_W_ADDL, 0x031A},
 	{S5K6AAFX_REG_WR, 0x0000}, /* PLL config */
 	{S5K6AAFX_REG_W_ADDL, 0x0314},
-	{S5K6AAFX_REG_WR, 0x1B58},
-	{S5K6AAFX_REG_WR, 0x1770},
+	{S5K6AAFX_REG_WR, 0x30D4},
+	{S5K6AAFX_REG_WR, 0x30D4},
 	{S5K6AAFX_REG_WR, 0x0042},
 	{S5K6AAFX_REG_W_ADDL, 0x031E},
 	{S5K6AAFX_REG_WR, 0x0002}, /* 1b: Avg S.S 2b: SXGA */
@@ -2517,8 +2503,8 @@ static const struct s5k6aafx_i2c_reg_conf const prev_snap_conf_init_tbl_cob[] = 
 	{S5K6AAFX_REG_W_ADDL, 0x033C},
 	{S5K6AAFX_REG_WR, 0x0001}, /* PLL config */
 	{S5K6AAFX_REG_W_ADDL, 0x0336},
-	{S5K6AAFX_REG_WR, 0x36B0},
-	{S5K6AAFX_REG_WR, 0x36B0},
+	{S5K6AAFX_REG_WR, 0x30D4},
+	{S5K6AAFX_REG_WR, 0x30D4},
 	{S5K6AAFX_REG_WR, 0x0042},
 	{S5K6AAFX_REG_W_ADDL, 0x0340},
 	{S5K6AAFX_REG_WR, 0x0002}, /* 1b: Avg S.S 2b: SXGA */
@@ -2528,13 +2514,9 @@ static const struct s5k6aafx_i2c_reg_conf const prev_snap_conf_init_tbl_cob[] = 
 	{S5K6AAFX_REG_WR, 0x0535},
 	{S5K6AAFX_REG_WR, 0x0000},
 
-	/* REG_TC_GP_ActiveCapConfig-Select snapshot configuration_0 */
-	{S5K6AAFX_REG_W_ADDL, 0x0224},
-	{S5K6AAFX_REG_WR, 0x0000},
-	/* REG_TC_GP_CapConfigChanged */
-	{S5K6AAFX_REG_W_ADDL, 0x0226},
-	{S5K6AAFX_REG_WR, 0x0001}, /* Enable output after config change */
 
+
+#if 0
 	{S5K6AAFX_REG_W_ADDL, 0x01FA},
 	/* REG_TC_GP_PrevReqInputWidth */
 	{S5K6AAFX_REG_WR, S5K6AAFX_ADJ_FULL_SIZE_WIDTH},
@@ -2572,7 +2554,98 @@ static const struct s5k6aafx_i2c_reg_conf const prev_snap_conf_init_tbl_cob[] = 
 	/* REG_TC_GEP_InputsChangeRequest */
 	{S5K6AAFX_REG_W_ADDL, 0x021A},
 	{S5K6AAFX_REG_WR, 0x0001},
+#endif
+};
 
+static const struct s5k6aafx_i2c_reg_conf const prev_conf_HD_cob[] = {
+	{S5K6AAFX_REG_W_ADDH,0x7000},
+	{S5K6AAFX_REG_W_ADDL,0x021C},
+	{S5K6AAFX_REG_WR,0x0000},
+	{S5K6AAFX_REG_WR,0x0001},
+	{S5K6AAFX_REG_W_ADDL,0x0224},
+	{S5K6AAFX_REG_WR,0x0001},
+	{S5K6AAFX_REG_WR,0x0001},
+	{S5K6AAFX_REG_W_ADDL,0x020A},
+	{S5K6AAFX_REG_WR,0x0500},
+	{S5K6AAFX_REG_WR,0x02D0},
+	{S5K6AAFX_REG_W_ADDL,0x01FA},
+	{S5K6AAFX_REG_WR,0x0500},
+	{S5K6AAFX_REG_WR,0x02D0},
+	{S5K6AAFX_REG_WR,0x0000},
+	{S5K6AAFX_REG_W_ADDL,0x0200},
+	{S5K6AAFX_REG_WR,0x0098},
+	{S5K6AAFX_REG_W_ADDL,0x021A},
+	{S5K6AAFX_REG_WR,0x0001},
+	{S5K6AAFX_REG_W_ADDL,0x0202},
+	{S5K6AAFX_REG_WR,0x0500},
+	{S5K6AAFX_REG_WR,0x02D0},
+	{S5K6AAFX_REG_WR,0x0000},
+	{S5K6AAFX_REG_WR,0x0098},
+	{S5K6AAFX_REG_W_ADDL,0x0212},
+	{S5K6AAFX_REG_WR,0x0500},
+	{S5K6AAFX_REG_WR,0x02D0},
+	{S5K6AAFX_REG_WR,0x0000},
+	{S5K6AAFX_REG_WR,0x0000},
+	{S5K6AAFX_REG_W_ADDL,0x021A},
+	{S5K6AAFX_REG_WR,0x0001},
+	/*delay 100ms*/
+};
+static const struct s5k6aafx_i2c_reg_conf const prev_conf_VGA_cob[] = {
+	/*VGA*/
+	/* REG_TC_GP_ActiveCapConfig-Select snapshot configuration_0 */
+	{S5K6AAFX_REG_W_ADDL, 0x0224},
+	{S5K6AAFX_REG_WR, 0x0000},
+	/* REG_TC_GP_CapConfigChanged */
+	{S5K6AAFX_REG_W_ADDL, 0x0226},
+	{S5K6AAFX_REG_WR, 0x0001}, /* Enable output after config change */
+	/*********** APPLY PREVIEW CONFIGURATION & RUN PREVIEW ***********/
+	/* REG_TC_GP_ActivePrevConfig-Select preview configuration_3 */
+	{S5K6AAFX_REG_W_ADDL, 0x021C},
+	{S5K6AAFX_REG_WR, 0x0003},
+	/* REG_TC_GP_PrevOpenAfterChange */
+	{S5K6AAFX_REG_W_ADDL, 0x0220},
+	{S5K6AAFX_REG_WR, 0x0001},
+	/* REG_TC_GP_NewConfigSync-Update preview configuration */
+	{S5K6AAFX_REG_W_ADDL, 0x01F8},
+	{S5K6AAFX_REG_WR, 0x0001},
+	/* REG_TC_GP_PrevConfigChanged */
+	{S5K6AAFX_REG_W_ADDL, 0x021E},
+	{S5K6AAFX_REG_WR, 0x0001}, /* Enable output after config change */
+	{S5K6AAFX_REG_W_ADDL, 0x01F0},
+	{S5K6AAFX_REG_WR, 0x0001}, /* REG_TC_GP_EnablePreview - Start preview */
+	{S5K6AAFX_REG_WR, 0x0001}, /* REG_TC_GP_EnablePreviewChanged */
+};
+
+static const struct s5k6aafx_i2c_reg_conf const prev_mode_switch_conf_VGA_cob[] = {
+	/*VGA*/
+	/* REG_TC_GP_ActiveCapConfig-Select snapshot configuration_0 */
+	//{S5K6AAFX_REG_W_ADDL, 0x0224},
+	//{S5K6AAFX_REG_WR, 0x0000},
+	/* REG_TC_GP_CapConfigChanged */
+	//{S5K6AAFX_REG_W_ADDL, 0x0226},
+	//{S5K6AAFX_REG_WR, 0x0001}, /* Enable output after config change */
+	{S5K6AAFX_REG_W_ADDL,0x020A},
+	{S5K6AAFX_REG_WR,0x0500},
+	{S5K6AAFX_REG_W_ADDL,0x020C},
+	{S5K6AAFX_REG_WR,0x03C0},
+	{S5K6AAFX_REG_W_ADDL,0x01FA},
+	{S5K6AAFX_REG_WR,0x0500},
+	{S5K6AAFX_REG_WR,0x03C0},
+	{S5K6AAFX_REG_WR,0x0000},
+	{S5K6AAFX_REG_W_ADDL,0x0200},
+	{S5K6AAFX_REG_WR,0x0020},
+	{S5K6AAFX_REG_WR,0x0500},/*0x0202*/
+	{S5K6AAFX_REG_WR,0x0400},/*0x0204*/
+	{S5K6AAFX_REG_WR,0x0000},/*0x0206*/
+	{S5K6AAFX_REG_WR,0x0000},/*0x0208*/
+	{S5K6AAFX_REG_W_ADDL,0x0212},
+	{S5K6AAFX_REG_WR,0x0500},
+	{S5K6AAFX_REG_WR,0x0400},
+	{S5K6AAFX_REG_WR,0x0000},
+	{S5K6AAFX_REG_WR,0x0000},
+	{S5K6AAFX_REG_W_ADDL,0x021A},
+	{S5K6AAFX_REG_WR,0x0001},
+	/*delay 150ms*/
 };
 
 static const struct s5k6aafx_i2c_reg_conf const prev_snap_conf_init_tb2_cob[] = {
@@ -2683,4 +2756,10 @@ struct s5k6aafx_reg s5k6aafx_regs_cob = {
 	.clk_init_tb2_size = ARRAY_SIZE(clk_init_tb2_cob),
 	.prev_snap_conf_init_tb2 = &prev_snap_conf_init_tb2_cob[0],
 	.prev_snap_conf_init_tb2_size = ARRAY_SIZE(prev_snap_conf_init_tb2_cob),
+	.prev_HD = &prev_conf_HD_cob[0],
+	.prev_HD_size = ARRAY_SIZE(prev_conf_HD_cob),
+	.prev_VGA = &prev_conf_VGA_cob[0],
+	.prev_VGA_size = ARRAY_SIZE(prev_conf_VGA_cob),
+	.prev_mode_switch_VGA = &prev_mode_switch_conf_VGA_cob[0],
+	.prev_mode_switch_VGA_size = ARRAY_SIZE(prev_mode_switch_conf_VGA_cob),
 };

@@ -170,7 +170,7 @@ extern void sii9234_change_usb_owner(bool bMHL);
 	}							\
 } while (0)
 
-static unsigned engineerid;
+unsigned engineerid, mem_size_mb;
 
 static struct msm_spm_platform_data msm_spm_data_v1[] __initdata = {
 	[0] = {
@@ -848,7 +848,7 @@ static struct platform_device flashlight_device = {
 };
 #endif
 
-static uint32_t camera_off_gpio_table[] = {
+static uint32_t camera_off_gpio_table_sp3d[] = {
 	GPIO_CFG(SHOOTER_CAM_I2C_SDA, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),/*i2c*/
 	GPIO_CFG(SHOOTER_CAM_I2C_SCL, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),/*i2c*/
 	GPIO_CFG(SHOOTER_SP3D_MCLK, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),/*MCLK*/
@@ -866,10 +866,28 @@ static uint32_t camera_off_gpio_table[] = {
 	GPIO_CFG(SHOOTER_CAM_SEL, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),/*camera switch*/
 };
 
-static uint32_t camera_on_gpio_table[] = {
+static uint32_t camera_off_gpio_table_liteon[] = {
+	GPIO_CFG(SHOOTER_CAM_I2C_SDA, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),/*i2c*/
+	GPIO_CFG(SHOOTER_CAM_I2C_SCL, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),/*i2c*/
+	GPIO_CFG(SHOOTER_SP3D_MCLK, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),/*MCLK*/
+	GPIO_CFG(106, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA),/*sharp INT*/
+	GPIO_CFG(SHOOTER_SP3D_SPI_DO, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_SP3D_SPI_DI, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_SP3D_SPI_CS, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_SP3D_SPI_CLK, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_S5K4E1_VCM_PD, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_S5K4E1_INTB, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_S5K4E1_PD, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_WEBCAM_RST, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),/*camera reset*/
+	GPIO_CFG(SHOOTER_WEBCAM_STB, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),/*camera standby*/
+	GPIO_CFG(SHOOTER_CAM_SEL, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),/*camera switch*/
+};
+
+
+static uint32_t camera_on_gpio_table_sp3d[] = {
 	GPIO_CFG(SHOOTER_CAM_I2C_SDA, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
 	GPIO_CFG(SHOOTER_CAM_I2C_SCL, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
-	GPIO_CFG(SHOOTER_SP3D_MCLK, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),/*MCLK*/
+	GPIO_CFG(SHOOTER_SP3D_MCLK, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_6MA),/*MCLK*/
 	GPIO_CFG(106, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
 	GPIO_CFG(SHOOTER_SP3D_SPI_DO,  1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
 	GPIO_CFG(SHOOTER_SP3D_SPI_DI,  1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
@@ -884,7 +902,24 @@ static uint32_t camera_on_gpio_table[] = {
 	GPIO_CFG(SHOOTER_CAM_SEL, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
 };
 
+static uint32_t camera_on_gpio_table_liteon[] = {
+	GPIO_CFG(SHOOTER_CAM_I2C_SDA, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
+	GPIO_CFG(SHOOTER_CAM_I2C_SCL, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
+	GPIO_CFG(SHOOTER_SP3D_MCLK, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_6MA),/*MCLK*/
+	GPIO_CFG(106, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_SP3D_SPI_DO,  0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_SP3D_SPI_DI,  0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_SP3D_SPI_CS,  0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_SP3D_SPI_CLK, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_S5K4E1_VCM_PD, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_8MA),
+	GPIO_CFG(SHOOTER_S5K4E1_INTB, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_8MA),
+	GPIO_CFG(SHOOTER_S5K4E1_PD, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_8MA),
+	GPIO_CFG(SHOOTER_WEBCAM_RST, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_WEBCAM_STB, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(SHOOTER_CAM_SEL, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+};
 
+#ifdef CONFIG_SP3D
 static uint32_t sp3d_spi_gpio[] = {
 	/* or this? the i/o direction and up/down are much more correct */
 	GPIO_CFG(SHOOTER_SP3D_SPI_DO,  1, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_8MA),
@@ -892,6 +927,7 @@ static uint32_t sp3d_spi_gpio[] = {
 	GPIO_CFG(SHOOTER_SP3D_SPI_CS,  1, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_UP, GPIO_CFG_8MA),
 	GPIO_CFG(SHOOTER_SP3D_SPI_CLK, 1, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_8MA),
 };
+#endif
 
 static int camera_sensor_power_enable(char *power, unsigned volt)
 {
@@ -973,7 +1009,7 @@ static void shooter_set_gpio(int gpio, int state){
 	gpio_set_value(gpio, state);
 }
 
-
+#ifdef CONFIG_SP3D
 static int Shooter_sp3d_vreg_on(void)
 {
 	int rc;
@@ -1020,9 +1056,12 @@ static int Shooter_sp3d_vreg_off(void)
 	/* main camera MVDD */
 	rc = camera_sensor_power_disable("8058_l10");
 	udelay(10);
+
+	if (!(engineerid == 7)) {	//according to logic Jason Kao, only tutn off l15 when sharp
 	/* main camera AVDD */
-	rc = camera_sensor_power_disable("8058_l15");
-	udelay(10);
+		rc = camera_sensor_power_disable("8058_l15");
+		udelay(10);
+	}
 	if(system_rev == 2 && engineerid >= 3){
 		/* main camera DVDD18 */
 		rc = camera_sensor_power_disable("8901_lvs3");
@@ -1043,6 +1082,83 @@ static int Shooter_sp3d_vreg_off(void)
 
 	return rc;
 }
+#endif
+
+#ifdef CONFIG_QS_S5K4E1
+static int Shooter_qs_s5k4e1_vreg_on(void)
+{
+	int rc;
+	pr_info("[Camera]%s\n", __func__);
+	mdelay(50);
+
+	rc = camera_sensor_power_enable("8058_l15", 2800000);
+	pr_info("[Camera]sensor_power_enable(\"8058_l15\", 1800) == %d\n", rc);
+	udelay(50);
+
+	if(system_rev >= 2 && engineerid >= 3){/*VERSION A*/
+		/*IO*//*This is switch power*/
+		rc = camera_sensor_power_enable_8901("8901_lvs3");
+		pr_info("[Camera]sensor_power_enable(\"8901_lvs3\", 1800) == %d\n", rc);
+		mdelay(1);
+		
+		rc = camera_sensor_power_enable_8901("8901_lvs2");
+		pr_info("[Camera]sensor_power_enable(\"8901_lvs2\", 1800) == %d\n", rc);
+	}else {
+		rc = camera_sensor_power_enable("8058_l9", 1800000);
+		pr_info("[Camera]sensor_power_enable(\"8058_l9\", 1800) == %d\n", rc);
+		/* VDDIO*/
+		rc = camera_sensor_power_enable("8058_l8", 1800000);
+		pr_info("[Camera]sensor_power_enable(\"8058_l8\", 1800) == %d\n", rc);
+	}
+	udelay(50);
+
+	/* main camera AVDD */
+	rc = camera_sensor_power_enable("8058_l10", 2800000);
+	pr_info("[Camera]sensor_power_enable(\"8058_l10\", 2800) == %d\n", rc);
+	udelay(50);
+
+	shooter_set_gpio(SHOOTER_S5K4E1_INTB, 1);
+	shooter_set_gpio(SHOOTER_S5K4E1_PD, 1);
+	shooter_set_gpio(SHOOTER_S5K4E1_VCM_PD, 1);
+
+	return rc;
+}
+
+static int Shooter_qs_s5k4e1_vreg_off(void)
+{
+	int rc;
+	pr_info("[Camera]%s\n", __func__);
+	shooter_set_gpio(SHOOTER_S5K4E1_INTB, 0); // interrupt
+	shooter_set_gpio(SHOOTER_S5K4E1_VCM_PD, 0); // PDX
+	shooter_set_gpio(SHOOTER_S5K4E1_PD, 0); // RST
+
+	/* main camera AVDD */
+	rc = camera_sensor_power_disable("8058_l10");
+	udelay(50);
+	
+	/*VDDIO*/
+	if(system_rev >= 2 && engineerid >= 3){/*VERSION A*/
+		rc = camera_sensor_power_disable("8901_lvs2");
+		/*This is swich power*/
+		rc = camera_sensor_power_disable("8901_lvs3");
+		pr_info("[Camera]sensor_power_enable(\"8901_lvs3\", 1800) == %d\n", rc);
+	}else{
+		/*This is swich power*/
+		rc = camera_sensor_power_disable("8058_l9");
+		pr_info("[Camera]sensor_power_disable(\"8058_l9\") == %d\n", rc);
+		rc = camera_sensor_power_disable("8058_l8");
+		pr_info("[Camera]sensor_power_disable(\"8058_l8\") == %d\n", rc);
+	}
+
+	//according to logic Jason Kao, do not turn off l15 to avoid current leakage
+	if (!(engineerid == 7)) 
+	{
+		rc = camera_sensor_power_disable("8058_l15");
+		udelay(50);
+	}
+	return rc;
+}
+#endif
 
 static int Shooter_s5k6aafx_vreg_on(void)
 {
@@ -1061,6 +1177,7 @@ static int Shooter_s5k6aafx_vreg_on(void)
 		rc = camera_sensor_power_enable_8901("8901_lvs3");
 		pr_info("[Camera]sensor_power_enable(\"8901_lvs3\", 1800) == %d\n", rc);
 		mdelay(1);
+		
 	}else{
 		rc = camera_sensor_power_enable("8058_l8", 1800000);
 		pr_info("[Camera]sensor_power_enable(\"8058_l8\", 1800) == %d\n", rc);
@@ -1099,7 +1216,6 @@ static int Shooter_s5k6aafx_vreg_off(void)
 	/* main / 2nd camera analog power */
 	rc = camera_sensor_power_disable("8058_l3");
 	pr_info("[Camera]sensor_power_disable(\"8058_l3\") == %d\n", rc);
-
 	return rc;
 }
 
@@ -1140,14 +1256,24 @@ static struct platform_device htc_battery_pdev = {
 #define GPIO_CAM_EN (GPIO_EXPANDER_GPIO_BASE + 13)
 static void shooter_config_camera_on_gpios(void)
 {
-	config_gpio_table(camera_on_gpio_table,
-		ARRAY_SIZE(camera_on_gpio_table));
+	if (engineerid == 7) {
+		config_gpio_table(camera_on_gpio_table_liteon,
+			ARRAY_SIZE(camera_on_gpio_table_liteon));
+	} else {
+		config_gpio_table(camera_on_gpio_table_sp3d,
+			ARRAY_SIZE(camera_on_gpio_table_sp3d));
+	}
 }
 
 static void shooter_config_camera_off_gpios(void)
 {
-	config_gpio_table(camera_off_gpio_table,
-		ARRAY_SIZE(camera_off_gpio_table));
+	if (engineerid == 7) {
+		config_gpio_table(camera_off_gpio_table_liteon,
+			ARRAY_SIZE(camera_off_gpio_table_liteon));
+	} else {
+		config_gpio_table(camera_off_gpio_table_sp3d,
+			ARRAY_SIZE(camera_off_gpio_table_sp3d));
+	}
 	shooter_set_gpio(SHOOTER_SP3D_SPI_DO, 0);
 	shooter_set_gpio(SHOOTER_SP3D_SPI_CS, 0);
 	shooter_set_gpio(SHOOTER_SP3D_SPI_CLK, 0);
@@ -1203,17 +1329,6 @@ static struct msm_camera_sensor_flash_src msm_flash_src = {
 #endif
 };
 
-#ifdef CONFIG_SP3D
-static struct msm_camera_sensor_flash_data flash_sp3d = {
-	.flash_type		= MSM_CAMERA_FLASH_LED,
-	.flash_src		= &msm_flash_src
-};
-
-static struct camera_flash_cfg msm_camera_sensor_flash_cfg = {
-	.low_temp_limit		= 10,
-	.low_cap_limit		= 15,
-};
-
 static struct spi_board_info sp3d_spi_board_info[] __initdata = {
 	{
 		.modalias	= "sp3d_spi",
@@ -1222,6 +1337,17 @@ static struct spi_board_info sp3d_spi_board_info[] __initdata = {
 		.chip_select	= 0,
 		.max_speed_hz	= 15060000,
 	}
+};
+
+static struct camera_flash_cfg msm_camera_sensor_flash_cfg = {
+	.low_temp_limit		= 10,
+	.low_cap_limit		= 15,
+};
+
+#ifdef CONFIG_SP3D
+static struct msm_camera_sensor_flash_data flash_sp3d = {
+	.flash_type		= MSM_CAMERA_FLASH_LED,
+	.flash_src		= &msm_flash_src
 };
 
 static struct msm_camera_sensor_info msm_camera_sensor_sp3d_data = {
@@ -1244,6 +1370,38 @@ struct platform_device msm_camera_sensor_sp3d = {
 	.name	= "msm_camera_sp3d",
 	.dev	= {
 		.platform_data = &msm_camera_sensor_sp3d_data,
+	},
+};
+#endif
+
+#ifdef CONFIG_QS_S5K4E1
+static char eeprom_data[864];
+static struct msm_camera_sensor_flash_data flash_qs_s5k4e1 = {
+	.flash_type		= MSM_CAMERA_FLASH_LED,
+	.flash_src		= &msm_flash_src
+};
+
+static struct msm_camera_sensor_info msm_camera_sensor_qs_s5k4e1_data = {
+	.sensor_name	= "qs_s5k4e1",
+	.sensor_reset	= SHOOTER_S5K4E1_PD,
+	.vcm_enable		= 0,
+	.camera_power_on = Shooter_qs_s5k4e1_vreg_on,
+	.camera_power_off = Shooter_qs_s5k4e1_vreg_off,
+	.camera_clk_switch = Shooter_maincam_clk_switch,
+	.pdata			= &msm_camera_device_data,
+	.resource		= msm_camera_resources,
+	.num_resources	= ARRAY_SIZE(msm_camera_resources),
+	.flash_data		= &flash_qs_s5k4e1,
+	.flash_cfg = &msm_camera_sensor_flash_cfg,
+	.stereo_low_cap_limit = 15,
+	.csi_if			= 1,
+	.dev_node		= 0,
+	.eeprom_data		= eeprom_data,
+};
+struct platform_device msm_camera_sensor_qs_s5k4e1 = {
+	.name	= "msm_camera_qs_s5k4e1",
+	.dev	= {
+		.platform_data = &msm_camera_sensor_qs_s5k4e1_data,
 	},
 };
 #endif
@@ -1282,6 +1440,11 @@ static struct i2c_board_info msm_camera_boardinfo[] __initdata = {
 	{
 		I2C_BOARD_INFO("s5k6aafx", 0x5a >> 1), /* COB type */
 	},
+	#ifdef CONFIG_QS_S5K4E1
+	{
+		I2C_BOARD_INFO("qs_s5k4e1", 0x20),
+	},
+	#endif
 };
 
 #ifdef CONFIG_MSM_GEMINI
@@ -1683,9 +1846,14 @@ static void __init msm8x60_init_dsps(void)
 #define MSM_PMEM_SF_SIZE 0x4000000 /* 64 Mbytes */
 #define MSM_OVERLAY_BLT_SIZE	roundup(0x500000, 4096)
 
-#define MSM_PMEM_KERNEL_EBI1_SIZE  0x600000
 #define MSM_PMEM_ADSP_SIZE         0x2000000
 #define MSM_PMEM_AUDIO_SIZE        0x239000
+
+#define MSM_PMEM_SF_BASE		(0x70000000 - MSM_PMEM_SF_SIZE)
+#define MSM_OVERLAY_BLT_BASE	(MSM_PMEM_SF_BASE - MSM_OVERLAY_BLT_SIZE)
+#define MSM_PMEM_AUDIO_BASE	(MSM_OVERLAY_BLT_BASE - MSM_PMEM_AUDIO_SIZE)
+#define MSM_PMEM_ADSP_BASE	(0x40400000)
+#define MSM_FB_BASE	(MSM_PMEM_ADSP_BASE + MSM_PMEM_ADSP_SIZE)
 
 #define MSM_SMI_BASE          0x38000000
 /* Kernel SMI PMEM Region for video core, used for Firmware */
@@ -1707,16 +1875,6 @@ static int __init fb_size_setup(char *p)
 	return 0;
 }
 early_param("fb_size", fb_size_setup);
-
-#ifdef CONFIG_KERNEL_PMEM_EBI_REGION
-static unsigned pmem_kernel_ebi1_size = MSM_PMEM_KERNEL_EBI1_SIZE;
-static int __init pmem_kernel_ebi1_size_setup(char *p)
-{
-	pmem_kernel_ebi1_size = memparse(p, NULL);
-	return 0;
-}
-early_param("pmem_kernel_ebi1_size", pmem_kernel_ebi1_size_setup);
-#endif
 
 #ifdef CONFIG_ANDROID_PMEM
 static unsigned pmem_sf_size = MSM_PMEM_SF_SIZE;
@@ -1778,20 +1936,6 @@ static struct platform_device wifi_bt_slp_clk = {
 	.dev = {
 		.platform_data = &htc_slp_clk_data,
 	},
-};
-#endif
-
-#ifdef CONFIG_KERNEL_PMEM_EBI_REGION
-static struct android_pmem_platform_data android_pmem_kernel_ebi1_pdata = {
-	.name = PMEM_KERNEL_EBI1_DATA_NAME,
-	.allocator_type = PMEM_ALLOCATORTYPE_BITMAP,
-	.cached = 0,
-};
-
-static struct platform_device android_pmem_kernel_ebi1_device = {
-	.name = "android_pmem",
-	.id = 1,
-	.dev = { .platform_data = &android_pmem_kernel_ebi1_pdata },
 };
 #endif
 
@@ -1949,34 +2093,23 @@ static struct platform_device hdmi_msm_device = {
 
 static void __init msm8x60_allocate_memory_regions(void)
 {
-	void *addr;
 	unsigned long size;
 
 	size = MSM_FB_SIZE;
-	addr = alloc_bootmem(size);
-	msm_fb_resources[0].start = __pa(addr);
+	msm_fb_resources[0].start = MSM_FB_BASE;
 	msm_fb_resources[0].end = msm_fb_resources[0].start + size - 1;
 	pr_info("allocating %lu bytes at %p (%lx physical) for fb\n",
-		size, addr, __pa(addr));
+		size, __va(MSM_FB_BASE), (unsigned long)MSM_FB_BASE);
 
-	addr = alloc_bootmem(MSM_OVERLAY_BLT_SIZE);
-	msm_fb_resources[1].start = __pa(addr);
+	msm_fb_resources[1].start = MSM_OVERLAY_BLT_BASE;
+	if (mem_size_mb == 1024)
+			msm_fb_resources[1].start += 0x10000000;
 	msm_fb_resources[1].end = msm_fb_resources[1].start +
 		MSM_OVERLAY_BLT_SIZE - 1;
-	pr_info("allocating %lu bytes at %p (%lx physical) for"
+	pr_info("allocating %lu bytes at %p (%lx physical) for "
 		"overlay write back\n", (unsigned long)MSM_OVERLAY_BLT_SIZE,
-		addr, __pa(addr));
-
-#ifdef CONFIG_KERNEL_PMEM_EBI_REGION
-	size = pmem_kernel_ebi1_size;
-	if (size) {
-		addr = alloc_bootmem_aligned(size, 0x100000);
-		android_pmem_kernel_ebi1_pdata.start = __pa(addr);
-		android_pmem_kernel_ebi1_pdata.size = size;
-		pr_info("allocating %lu bytes at %p (%lx physical) for kernel"
-			" ebi1 pmem arena\n", size, addr, __pa(addr));
-	}
-#endif
+		__va(msm_fb_resources[1].start),
+		(unsigned long)msm_fb_resources[1].start);
 
 #ifdef CONFIG_KERNEL_PMEM_SMI_REGION
 	size = PMEM_KERNEL_SMI_SIZE;
@@ -1992,11 +2125,11 @@ static void __init msm8x60_allocate_memory_regions(void)
 #ifdef CONFIG_ANDROID_PMEM
 	size = pmem_adsp_size;
 	if (size) {
-		addr = alloc_bootmem(size);
-		android_pmem_adsp_pdata.start = __pa(addr);
+		android_pmem_adsp_pdata.start = MSM_PMEM_ADSP_BASE;
 		android_pmem_adsp_pdata.size = size;
 		pr_info("allocating %lu bytes at %p (%lx physical) for adsp "
-			"pmem arena\n", size, addr, __pa(addr));
+			"pmem arena\n", size, __va(MSM_PMEM_ADSP_BASE),
+			(unsigned long)MSM_PMEM_ADSP_BASE);
 	}
 
 	size = MSM_PMEM_SMIPOOL_SIZE;
@@ -2010,20 +2143,24 @@ static void __init msm8x60_allocate_memory_regions(void)
 
 	size = MSM_PMEM_AUDIO_SIZE;
 	if (size) {
-		addr = alloc_bootmem(size);
-		android_pmem_audio_pdata.start = __pa(addr);
+		android_pmem_audio_pdata.start = MSM_PMEM_AUDIO_BASE;
+		if (mem_size_mb == 1024)
+			android_pmem_audio_pdata.start += 0x10000000;
 		android_pmem_audio_pdata.size = size;
 		pr_info("allocating %lu bytes at %p (%lx physical) for audio "
-			"pmem arena\n", size, addr, __pa(addr));
+			"pmem arena\n", size, __va(android_pmem_audio_pdata.start),
+			(unsigned long)android_pmem_audio_pdata.start);
 	}
 
 	size = pmem_sf_size;
 	if (size) {
-		addr = alloc_bootmem(size);
-		android_pmem_pdata.start = __pa(addr);
+		android_pmem_pdata.start = MSM_PMEM_SF_BASE;
+		if (mem_size_mb == 1024)
+			android_pmem_pdata.start += 0x10000000;
 		android_pmem_pdata.size = size;
 		pr_info("allocating %lu bytes at %p (%lx physical) for sf "
-			"pmem arena\n", size, addr, __pa(addr));
+			"pmem arena\n", size,  __va(android_pmem_pdata.start),
+			(unsigned long)android_pmem_pdata.start);
 	}
 #endif
 
@@ -2807,6 +2944,8 @@ static struct platform_device scm_log_device = {
 static struct platform_device *surf_devices[] __initdata = {
 	&ram_console_device,
 	&msm_device_smd,
+	&msm_device_dmov_adm0,
+	&msm_device_dmov_adm1,
 	&msm_device_uart_dm12,
 #ifdef CONFIG_WIMAX_SERIAL_MSM
 	&msm_device_uart3,
@@ -2850,9 +2989,6 @@ static struct platform_device *surf_devices[] __initdata = {
 #ifdef CONFIG_BATTERY_MSM
 	&msm_batt_device,
 #endif
-#ifdef CONFIG_KERNEL_PMEM_EBI_REGION
-	&android_pmem_kernel_ebi1_device,
-#endif
 #ifdef CONFIG_KERNEL_PMEM_SMI_REGION
 	&android_pmem_kernel_smi_device,
 #endif
@@ -2879,6 +3015,9 @@ static struct platform_device *surf_devices[] __initdata = {
 #endif /* CONFIG_FB_MSM_HDMI_MSM_PANEL */
 #ifdef CONFIG_SP3D
 	&msm_camera_sensor_sp3d,
+#endif
+#ifdef CONFIG_QS_S5K4E1
+	&msm_camera_sensor_qs_s5k4e1,
 #endif
 	&msm_camera_sensor_webcam,
 #ifdef CONFIG_MSM_GEMINI
@@ -3757,9 +3896,10 @@ struct atmel_i2c_platform_data shooter_ts_atmel_data[] = {
 		.abs_width_max = 20,
 		.gpio_irq = SHOOTER_TP_ATT_N,
 		.power = shooter_ts_atmel_power,
+		.unlock_attr = 1,
 		.config_T6 = {0, 0, 0, 0, 0, 0},
 		.config_T7 = {16, 8, 50},
-		.config_T8 = {9, 0, 5, 2, 0, 0, 5, 15, 4, 170},
+		.config_T8 = {9, 0, 5, 2, 0, 0, 5, 20, 5, 192},
 		.config_T9 = {139, 0, 0, 20, 10, 0, 16, 30, 2, 1, 0, 2, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 248, 228, 5, 5, 145, 50, 139, 80, 15, 10},
 		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		.config_T18 = {0, 0},
@@ -3770,8 +3910,10 @@ struct atmel_i2c_platform_data shooter_ts_atmel_data[] = {
 		.config_T24 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		.config_T25 = {3, 0, 16, 39, 124, 21, 0, 0, 0, 0, 0, 0, 0, 0},
 		.config_T28 = {0, 0, 4, 4, 8, 60},
-		.object_crc = {0xC9, 0x30, 0x64},
+		.object_crc = {0x20, 0xCD, 0xC5},
 		.cable_config = {35, 25, 8, 16},
+		.call_tchthr = {45, 50},
+		.locking_config = {20},
 		.noise_config = {45, 2, 35},
 		.GCAF_level = {20, 24, 28, 40, 63},
 	},
@@ -3788,9 +3930,10 @@ struct atmel_i2c_platform_data shooter_ts_atmel_data[] = {
 		.abs_width_max = 20,
 		.gpio_irq = SHOOTER_TP_ATT_N,
 		.power = shooter_ts_atmel_power,
+		.unlock_attr = 1,
 		.config_T6 = {0, 0, 0, 0, 0, 0},
 		.config_T7 = {16, 8, 50},
-		.config_T8 = {8, 0, 5, 2, 0, 0, 5, 15, 4, 170},
+		.config_T8 = {8, 0, 5, 2, 0, 0, 5, 20, 5, 192},
 		.config_T9 = {139, 0, 0, 20, 10, 0, 16, 30, 2, 1, 0, 2, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 6, 0, 15, 14, 140, 43, 147, 77, 15, 10},
 		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		.config_T18 = {0, 0},
@@ -3801,8 +3944,10 @@ struct atmel_i2c_platform_data shooter_ts_atmel_data[] = {
 		.config_T24 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		.config_T25 = {3, 0, 16, 39, 124, 21, 0, 0, 0, 0, 0, 0, 0, 0},
 		.config_T28 = {0, 0, 4, 4, 8, 60},
-		.object_crc = {0x4F, 0xEE, 0xF3},
+		.object_crc = {0xA6, 0x13, 0x52},
 		.cable_config = {35, 25, 8, 16},
+		.call_tchthr = {45, 50},
+		.locking_config = {20},
 		.noise_config = {45, 2, 35},
 		.GCAF_level = {20, 24, 28, 40, 63},
 	},
@@ -3819,9 +3964,10 @@ struct atmel_i2c_platform_data shooter_ts_atmel_data[] = {
 		.abs_width_max = 20,
 		.gpio_irq = SHOOTER_TP_ATT_N,
 		.power = shooter_ts_atmel_power,
+		.unlock_attr = 1,
 		.config_T6 = {0, 0, 0, 0, 0, 0},
 		.config_T7 = {16, 8, 50},
-		.config_T8 = {9, 0, 5, 2, 0, 0, 5, 15},
+		.config_T8 = {9, 0, 5, 2, 0, 0, 5, 20},
 		.config_T9 = {139, 0, 0, 20, 10, 0, 16, 30, 2, 1, 0, 2, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 248, 228, 5, 5, 145, 50, 139, 80, 15},
 		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		.config_T18 = {0, 0},
@@ -3849,9 +3995,10 @@ struct atmel_i2c_platform_data shooter_ts_atmel_data[] = {
 		.abs_width_max = 20,
 		.gpio_irq = SHOOTER_TP_ATT_N,
 		.power = shooter_ts_atmel_power,
+		.unlock_attr = 1,
 		.config_T6 = {0, 0, 0, 0, 0, 0},
 		.config_T7 = {16, 8, 50},
-		.config_T8 = {8, 0, 5, 2, 0, 0, 5, 15},
+		.config_T8 = {8, 0, 5, 2, 0, 0, 5, 20},
 		.config_T9 = {139, 0, 0, 20, 10, 0, 16, 30, 2, 1, 0, 2, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 6, 0, 15, 14, 140, 43, 147, 77, 15},
 		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		.config_T18 = {0, 0},
@@ -4556,7 +4703,7 @@ struct msm_sdcc_pad_drv_cfg {
 
 #ifdef CONFIG_MMC_MSM_SDC3_SUPPORT
 static struct msm_sdcc_pad_drv_cfg sdc3_pad_on_drv_cfg[] = {
-	{TLMM_HDRV_SDC3_CLK, GPIO_CFG_8MA},
+	{TLMM_HDRV_SDC3_CLK, GPIO_CFG_10MA},
 	{TLMM_HDRV_SDC3_CMD, GPIO_CFG_8MA},
 	{TLMM_HDRV_SDC3_DATA, GPIO_CFG_8MA}
 };
@@ -4880,7 +5027,8 @@ static int msm_sdcc_setup_vreg(int dev_id, unsigned char enable)
 		goto out;
 
 	if (enable) {
-		printk(KERN_INFO "%s: Enabling SD slot power\n", __func__);
+		if(dev_id == 3)
+			printk(KERN_INFO "%s: Enabling SD slot power\n", __func__);
 		if (curr_vdd_reg) {
 			mdelay(5);
 			rc = regulator_enable(curr_vdd_reg->reg);
@@ -4907,7 +5055,8 @@ static int msm_sdcc_setup_vreg(int dev_id, unsigned char enable)
 		 */
 		curr->sts = enable;
 	} else {
-		printk(KERN_INFO "%s: Disabling SD slot power\n", __func__);
+		if(dev_id == 3)
+			printk(KERN_INFO "%s: Disabling SD slot power\n", __func__);
 		if (curr_vdd_reg) {
 			rc = regulator_disable(curr_vdd_reg->reg);
 			if (rc) {
@@ -5555,7 +5704,9 @@ static void __init shooter_init(void)
 		printk(KERN_DEBUG "No Intersil chips\n");
 
 #ifdef CONFIG_USB_ANDROID
-	shooter_add_usb_devices();
+	/*usb driver won't be loaded in MFG 58 station*/
+	if (board_mfg_mode() != 6)
+		shooter_add_usb_devices();
 #endif
 
 	msm_pm_set_platform_data(msm_pm_data, ARRAY_SIZE(msm_pm_data));
@@ -5596,12 +5747,21 @@ static void __init shooter_init(void)
 	msm_clk_soc_set_ignore_list(clk_ignore_tbl, clk_num_ignore_tbl);
 }
 
+#define PHY_BASE_ADDR1	0x48000000
+#define SIZE_ADDR1	0x23800000
+
 static void __init shooter_fixup(struct machine_desc *desc, struct tag *tags,
 				 char **cmdline, struct meminfo *mi)
 {
-	msm_fixup(tags, mi);
-
+	mem_size_mb = parse_tag_memsize((const struct tag *)tags);
+	printk(KERN_DEBUG "%s: mem_size_mb=%u\n", __func__, mem_size_mb);
 	engineerid = parse_tag_engineerid(tags);
+	mi->nr_banks = 1;
+	mi->bank[0].start = PHY_BASE_ADDR1;
+	mi->bank[0].node = PHYS_TO_NID(PHY_BASE_ADDR1);
+	mi->bank[0].size = SIZE_ADDR1;
+	if (mem_size_mb == 1024)
+		mi->bank[0].size += 0x10000000;
 }
 
 MACHINE_START(SHOOTER, "shooter")

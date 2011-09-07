@@ -516,10 +516,11 @@ static void pm8058_irq_ack(unsigned int irq)
 
 static int pm8058_irq_set_type(unsigned int irq, unsigned int flow_type)
 {
-	int	master, irq_bit;
+	int	master, irq_bit, handled_irq;
 	struct	pm8058_chip *chip = get_irq_data(irq);
 	u8	block, config;
 
+	handled_irq = irq;
 	irq -= chip->pdata.irq_base;
 	if (irq > chip->pm_max_irq) {
 		chip->pm_max_irq = irq;
@@ -539,6 +540,7 @@ static int pm8058_irq_set_type(unsigned int irq, unsigned int flow_type)
 			chip->config[irq] &= ~PM8058_IRQF_MASK_RE;
 		if (flow_type & IRQF_TRIGGER_FALLING)
 			chip->config[irq] &= ~PM8058_IRQF_MASK_FE;
+		__set_irq_handler_unlocked(handled_irq, handle_edge_irq);
 	} else {
 		chip->config[irq] |= PM8058_IRQF_LVL_SEL;
 
@@ -546,6 +548,7 @@ static int pm8058_irq_set_type(unsigned int irq, unsigned int flow_type)
 			chip->config[irq] &= ~PM8058_IRQF_MASK_RE;
 		else
 			chip->config[irq] &= ~PM8058_IRQF_MASK_FE;
+		__set_irq_handler_unlocked(handled_irq, handle_level_irq);
 	}
 
 	config = PM8058_IRQF_WRITE | chip->config[irq] | PM8058_IRQF_CLR;
@@ -773,7 +776,7 @@ bail_out:
 #endif
 
 	for (i = 0; i < handled; i++)
-		handle_nested_irq(irqs_to_handle[i]);
+		generic_handle_irq(irqs_to_handle[i]);
 #ifdef CONFIG_MSM8X60_SSBI
 	spin_lock_irqsave(&chip->pm_lock, irqsave);
 #endif
@@ -1097,7 +1100,6 @@ static int pm8058_probe(
 		set_irq_data(i, (void *)chip);
 		set_irq_handler(i, handle_edge_irq);
 		set_irq_flags(i, IRQF_VALID);
-		set_irq_nested_thread(i, 1);
 	}
 
 	/* Add sub devices with the chip parameter as driver data */
@@ -1136,9 +1138,9 @@ static int pm8058_probe(
 	}
 
 #ifdef CONFIG_MSM8X60_SSBI
-	rc = request_threaded_irq(pdata->irq, NULL, pm8058_isr_thread,
-			IRQF_ONESHOT | IRQF_DISABLED | pdata->irq_trigger_flags,
-			"pm8058-irq", chip);
+	rc = request_irq(pdata->irq, pm8058_isr_thread,
+					pdata->irq_trigger_flags,
+					"pm8058-irq", chip);
 	if (rc < 0)
 		pr_err("%s: could not request irq %d: %d\n", __func__,
 				pdata->irq, rc);

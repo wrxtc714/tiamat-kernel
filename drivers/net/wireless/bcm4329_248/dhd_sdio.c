@@ -2844,6 +2844,9 @@ dhd_bus_init(dhd_pub_t *dhdp, bool enforce_mutex)
 
 		/* Set up the interrupt mask and enable interrupts */
 		bus->hostintmask = HOSTINTMASK;
+#ifdef HTC_KlocWork
+    if (bus->regs != NULL)
+#endif
 		W_SDREG(bus->hostintmask, &bus->regs->hostintmask, retries);
 
 		bcmsdh_cfg_write(bus->sdh, SDIO_FUNC_1, SBSDIO_WATERMARK, (uint8)watermark, &err);

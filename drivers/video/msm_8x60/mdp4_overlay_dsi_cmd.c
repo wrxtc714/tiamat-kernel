@@ -185,20 +185,20 @@ void mdp4_overlay_handle_padding(struct msm_fb_data_type *mfd, bool is_3d)
 	for(i = 0; i < 2; i++) {
 		if(fb_addr[i].fbphy == iBuf->buf) {
 			fbvir = (unsigned char*)fb_addr[i].fbvir;
-			fb_addr[i].is_3d = is_3d;
 			break;
 		} else if(fb_addr[i].fbphy == NULL || fb_addr[i].fbvir == NULL) {
 			fb_addr[i].fbphy = (unsigned char*) iBuf->buf;
 			fb_addr[i].fbvir = ioremap((unsigned long)fb_addr[i].fbphy, fbi->fix.smem_len/2);
 			fbvir = (unsigned char*)fb_addr[i].fbvir;
-			fb_addr[i].is_3d = is_3d;
 			//pr_info("%s(%d) call ioremap fbphy %p fbvir %p\n", __func__, __LINE__, fb_addr[i].fbphy, fb_addr[i].fbvir);
 			break;
 		}
 	}
 
-	if(is_3d)
+	if(is_3d) {
 		mdp4_overlay_move_padding(mfd, fbvir, is_3d);
+		fb_addr[i].is_3d = is_3d;
+	}
 	else {
 		for(i =0; i < 2; i++) {
 			if(fb_addr[i].is_3d) {
@@ -330,6 +330,10 @@ void mdp4_dsi_cmd_3d(struct msm_fb_data_type *mfd, struct msmfb_overlay_3d *r3d)
 
 	if(r3d->is_3d == PADDING_ENABLE || r3d->is_3d == PADDING_DISABLE) {
 		mfd->enable_uipadding = r3d->is_3d;
+
+		if(r3d->is_3d == PADDING_DISABLE)
+			mdp4_overlay_handle_padding(mfd, false);
+
 		return;
 	}
 
@@ -341,14 +345,11 @@ void mdp4_dsi_cmd_3d(struct msm_fb_data_type *mfd, struct msmfb_overlay_3d *r3d)
 	dsi_pipe->is_3d = r3d->is_3d;
 	dsi_pipe->src_height_3d = r3d->height;
 	dsi_pipe->src_width_3d = r3d->width;
-	//mfd->enable_uipadding = dsi_pipe->is_3d ? PADDING_ENABLE: PADDING_DISABLE;
 
 	src = (uint8 *) iBuf->buf;
 
 	pipe = dsi_pipe;
 
-	if(!pipe->is_3d)
-		mdp4_overlay_handle_padding(mfd, false);
 
 #ifdef CONFIG_FB_MSM_MIPI_DSI
 	if (mfd->panel_power_on)
@@ -433,6 +434,7 @@ int mdp4_dsi_overlay_blt_stop(struct msm_fb_data_type *mfd)
 	unsigned long flag;
 
 	if ((dsi_pipe->blt_end == 0) && dsi_pipe->blt_addr) {
+		mdp4_dsi_blt_dmap_busy_wait(dsi_mfd);
 		pr_info("%s: blt_end=%d blt_addr=%x pid=%d\n",
 			__func__, dsi_pipe->blt_end, (int)dsi_pipe->blt_addr, current->pid);
 		spin_lock_irqsave(&mdp_spin_lock, flag);
@@ -517,6 +519,7 @@ void mdp4_dma_p_done_dsi(struct mdp_dma_data *dma)
 {
 	int diff;
 
+	spin_lock(&mdp_done_lock);
 	mdp_disable_irq_nosync(MDP_DMA2_TERM);  /* disable intr */
 
 	spin_lock(&mdp_spin_lock);
@@ -542,6 +545,7 @@ void mdp4_dma_p_done_dsi(struct mdp_dma_data *dma)
 
 		}
 		spin_unlock(&mdp_spin_lock);
+		spin_unlock(&mdp_done_lock);
 		mdp_pipe_ctrl(MDP_OVERLAY0_BLOCK, MDP_BLOCK_POWER_OFF, TRUE);
 		return;
 	}
@@ -556,6 +560,7 @@ void mdp4_dma_p_done_dsi(struct mdp_dma_data *dma)
 
 	mdp4_blt_xy_update(dsi_pipe);
 	mdp_enable_irq(MDP_DMA2_TERM);	/* enable intr */
+	spin_unlock(&mdp_done_lock);
 
 #ifdef BLTDEBUG
 	printk("%s: kickoff dmap\n", __func__);
@@ -575,6 +580,7 @@ void mdp4_overlay0_done_dsi_cmd(struct mdp_dma_data *dma)
 {
 	int diff;
 
+	spin_lock(&mdp_done_lock);
 	mdp_disable_irq_nosync(MDP_OVERLAY0_TERM);
 
 	spin_lock(&mdp_spin_lock);
@@ -586,6 +592,7 @@ void mdp4_overlay0_done_dsi_cmd(struct mdp_dma_data *dma)
 		if (atomic_read(&busy_wait_cnt))
 			atomic_dec(&busy_wait_cnt);
 		spin_unlock(&mdp_spin_lock);
+		spin_unlock(&mdp_done_lock);
 		mdp_pipe_ctrl(MDP_OVERLAY0_BLOCK, MDP_BLOCK_POWER_OFF, TRUE);
 		return;
 	}
@@ -607,6 +614,7 @@ void mdp4_overlay0_done_dsi_cmd(struct mdp_dma_data *dma)
 	if (diff >= 2) {
 		pr_info("%s(%d) found diff > 2\n", __func__, __LINE__);
 		spin_unlock(&mdp_spin_lock);
+		spin_unlock(&mdp_done_lock);
 		return;
 	}
 
@@ -622,6 +630,7 @@ void mdp4_overlay0_done_dsi_cmd(struct mdp_dma_data *dma)
 
 	mdp4_blt_xy_update(dsi_pipe);
 	mdp_enable_irq(MDP_DMA2_TERM);	/* enable intr */
+	spin_unlock(&mdp_done_lock);
 #ifdef BLTDEBUG
 	printk("%s: kickoff dmap\n", __func__);
 #endif

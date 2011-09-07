@@ -133,6 +133,42 @@ void msm_fb_debugfs_file_create(struct dentry *root, const char *name,
 }
 #endif
 
+#if (defined(CONFIG_USB_FUNCTION_PROJECTOR) || defined(CONFIG_USB_ANDROID_PROJECTOR))
+static spinlock_t fb_data_lock = SPIN_LOCK_UNLOCKED;
+static struct msm_fb_info msm_fb_data;
+int msmfb_get_var(struct msm_fb_info *tmp)
+{
+    unsigned long flags;
+    spin_lock_irqsave(&fb_data_lock, flags);
+    memcpy(tmp, &msm_fb_data, sizeof(msm_fb_data));
+    spin_unlock_irqrestore(&fb_data_lock, flags);
+    return 0;
+}
+
+/* projector need this, and very much */
+int msmfb_get_fb_area(void)
+{
+    int area;
+    unsigned long flags;
+    spin_lock_irqsave(&fb_data_lock, flags);
+    area = msm_fb_data.msmfb_area;
+    spin_unlock_irqrestore(&fb_data_lock, flags);
+    return area;
+}
+
+static void msmfb_set_var(unsigned char *addr, int area)
+{
+    unsigned long flags;
+
+    spin_lock_irqsave(&fb_data_lock, flags);
+    msm_fb_data.fb_addr = addr;
+    msm_fb_data.msmfb_area = area;
+    spin_unlock_irqrestore(&fb_data_lock, flags);
+
+}
+#endif
+
+
 int msm_fb_cursor(struct fb_info *info, struct fb_cursor *cursor)
 {
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
@@ -342,6 +378,8 @@ static int msm_fb_probe(struct platform_device *pdev)
 
 	mfd->panel_info.frame_count = 0;
 	mfd->bl_level = 0;
+	mfd->width = msm_fb_pdata->width;
+	mfd->height = msm_fb_pdata->height;
 #ifdef CONFIG_FB_MSM_OVERLAY
 	mfd->overlay_play_enable = 1;
 
@@ -716,8 +754,6 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 	switch (blank_mode) {
 	case FB_BLANK_UNBLANK:
 		if (!mfd->panel_power_on) {
-			if( !pdata->bklctrl || !pdata->bklswitch)
-				hr_msleep(16);
 			ret = pdata->on(mfd->pdev);
 			if (ret == 0) {
 				mfd->panel_power_on = TRUE;
@@ -961,8 +997,8 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 	var->grayscale = 0,	/* No graylevels */
 	var->nonstd = 0,	/* standard pixel format */
 	var->activate = FB_ACTIVATE_VBL,	/* activate it at vsync */
-	var->height = -1,	/* height of picture in mm */
-	var->width = -1,	/* width of picture in mm */
+	var->height = mfd->height,	/* height of picture in mm */
+	var->width = mfd->width,	/* width of picture in mm */
 	var->accel_flags = 0,	/* acceleration flags */
 	var->sync = 0,	/* see FB_SYNC_* */
 	var->rotate = 0,	/* angle we rotate counter clockwise */
@@ -1087,6 +1123,14 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 					       (panel_info->mode2_bpp+7)/8) *
 			    panel_info->mode2_yres * mfd->fb_page), PAGE_SIZE);
 
+#if (defined(CONFIG_USB_FUNCTION_PROJECTOR) || defined(CONFIG_USB_ANDROID_PROJECTOR))
+    if(mfd->index == 0)
+    {
+        msm_fb_data.xres = panel_info->xres;
+        msm_fb_data.yres = panel_info->yres;
+        if(msm_fb_data.xres == 540) msm_fb_data.xres = 544;
+    }
+#endif
 
 
 	mfd->var_xres = panel_info->xres;
@@ -1142,6 +1186,13 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 
 	fbi->screen_base = fbram;
 	fbi->fix.smem_start = (unsigned long)fbram_phys;
+
+#if (defined(CONFIG_USB_FUNCTION_PROJECTOR) || defined(CONFIG_USB_ANDROID_PROJECTOR))
+    if(mfd->index == 0)
+    {
+        msmfb_set_var(fbi->screen_base, 0);
+    }
+#endif
 
 	memset(fbi->screen_base, 0x0, fix->smem_len);
 
@@ -1373,12 +1424,14 @@ static int msm_fb_release(struct fb_info *info, int user)
 	mfd->ref_cnt--;
 
 	if (!mfd->ref_cnt) {
+		#if 0 // Comment out the following code for C2D "captureScreen()" feature...
 		if ((ret =
 		     msm_fb_blank_sub(FB_BLANK_POWERDOWN, info,
 				      mfd->op_enable)) != 0) {
 			printk(KERN_ERR "msm_fb_release: can't turn off display!\n");
 			return ret;
 		}
+		#endif
 	}
 
 	pm_runtime_put(info->dev);
@@ -1443,6 +1496,10 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 
 		dirtyPtr = &dirty;
 	}
+
+#if (defined(CONFIG_USB_FUNCTION_PROJECTOR) || defined(CONFIG_USB_ANDROID_PROJECTOR))
+    if(mfd->index == 0) msmfb_set_var(mfd->fbi->screen_base, var->yoffset);
+#endif
 
 	down(&msm_fb_pan_sem);
 	mdp_set_dma_pan_info(info, dirtyPtr,

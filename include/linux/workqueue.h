@@ -212,7 +212,7 @@ __create_workqueue_key(const char *name, int singlethread,
 #define create_singlethread_workqueue(name) __create_workqueue((name), 1, 0, 0)
 
 extern void destroy_workqueue(struct workqueue_struct *wq);
-
+extern int is_workqueue_empty(struct workqueue_struct *wq);
 extern int queue_work(struct workqueue_struct *wq, struct work_struct *work);
 extern int queue_work_on(int cpu, struct workqueue_struct *wq,
 			struct work_struct *work);

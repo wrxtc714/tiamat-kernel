@@ -14,6 +14,9 @@ static int mmc_wimax_sdio_hw_reset = 0; // Default is disable HW reset and count
 static int mmc_wimax_packet_filter = 0;
 static int mmc_wimax_is_gpio_irq_enabled = 0;
 
+static int mmc_wimax_RD_FIFO_LEVEL_ERROR = 0;
+static int mmc_wimax_FW_freeze_WK_RX = 1;
+
 int mmc_wimax_set_status(int on)
 {
 	printk(KERN_INFO "%s on:%d\n", __func__, on);
@@ -206,3 +209,31 @@ int mmc_wimax_get_gpio_irq_enabled(void)
 	return mmc_wimax_is_gpio_irq_enabled;
 }
 EXPORT_SYMBOL(mmc_wimax_get_gpio_irq_enabled);
+
+int mmc_wimax_trigger_RD_FIFO_LEVEL_ERROR(int on)
+{
+	printk(KERN_INFO "%s on:%d\n", __func__, on); 
+  	mmc_wimax_RD_FIFO_LEVEL_ERROR = on;
+	return 0;
+}
+EXPORT_SYMBOL(mmc_wimax_trigger_RD_FIFO_LEVEL_ERROR);
+
+int mmc_wimax_get_RD_FIFO_LEVEL_ERROR(void)
+{
+  	return mmc_wimax_RD_FIFO_LEVEL_ERROR;
+}
+EXPORT_SYMBOL(mmc_wimax_get_RD_FIFO_LEVEL_ERROR);
+// For FW freeze RX WK
+int mmc_wimax_set_wimax_FW_freeze_WK_RX(int on)
+{
+	printk(KERN_INFO "%s on:%d\n", __func__, on);
+	mmc_wimax_FW_freeze_WK_RX = on;
+	return 0;
+}
+EXPORT_SYMBOL(mmc_wimax_set_wimax_FW_freeze_WK_RX);
+
+int mmc_wimax_get_wimax_FW_freeze_WK_RX(void)
+{
+	return mmc_wimax_FW_freeze_WK_RX;
+}
+EXPORT_SYMBOL(mmc_wimax_get_wimax_FW_freeze_WK_RX);

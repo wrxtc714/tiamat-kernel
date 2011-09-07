@@ -71,7 +71,7 @@
 
 static int dmp_stop(struct mldl_cfg *mldl_cfg, void *gyro_handle)
 {
-	unsigned char userCtrlReg;
+	unsigned char userCtrlReg = 0;
 	int result;
 
 	if (!mldl_cfg->dmp_is_running)
@@ -98,7 +98,7 @@ static int dmp_stop(struct mldl_cfg *mldl_cfg, void *gyro_handle)
  */
 static int dmp_start(struct mldl_cfg *pdata, void *mlsl_handle)
 {
-	unsigned char userCtrlReg;
+	unsigned char userCtrlReg = 0;
 	int result;
 
 	if (pdata->dmp_is_running == pdata->dmp_enable)
@@ -153,7 +153,7 @@ static int MLDLSetI2CBypass(struct mldl_cfg *mldl_cfg,
 			    void *mlsl_handle,
 			    unsigned char enable)
 {
-	unsigned char b;
+	unsigned char b = 0;
 	int result;
 
 	if ((mldl_cfg->gyro_is_bypassed && enable) ||
@@ -364,7 +364,7 @@ static int MLDLSetLevelShifterBit(struct mldl_cfg *pdata,
 	int result;
 	unsigned char reg;
 	unsigned char mask;
-	unsigned char regval;
+	unsigned char regval = 0;
 
 	if (0 == pdata->silicon_revision)
 		return ML_ERROR_INVALID_PARAMETER;
@@ -553,7 +553,7 @@ static int MLDLPowerMgmtMPU(struct mldl_cfg *pdata,
 			    unsigned char disable_gy,
 			    unsigned char disable_gz)
 {
-	unsigned char b;
+	unsigned char b = 0;
 	int result;
 
 	result =
@@ -845,7 +845,7 @@ int mpu_set_slave(struct mldl_cfg *mldl_cfg,
 		struct ext_slave_platform_data *slave_pdata)
 {
 	int result;
-	unsigned char reg;
+	unsigned char reg = 0;
 	unsigned char slave_reg;
 	unsigned char slave_len;
 	unsigned char slave_endian;
@@ -932,7 +932,7 @@ int mpu_set_slave(struct mldl_cfg *mldl_cfg,
 static int mpu_was_reset(struct mldl_cfg *mldl_cfg, void *gyro_handle)
 {
 	int result = ML_SUCCESS;
-	unsigned char reg;
+	unsigned char reg = 0;
 
 	result = MLSLSerialRead(gyro_handle, mldl_cfg->addr,
 				MPUREG_DMP_CFG_2, 1, &reg);
@@ -962,7 +962,7 @@ static int gyro_resume(struct mldl_cfg *mldl_cfg, void *gyro_handle)
 	int result;
 	int ii;
 	int jj;
-	unsigned char reg;
+	unsigned char reg = 0;
 	unsigned char regs[7];
 
 	/* Wake up the part */
@@ -1048,7 +1048,7 @@ static int gyro_resume(struct mldl_cfg *mldl_cfg, void *gyro_handle)
 
 	/* Write and verify memory */
 	for (ii = 0; ii < MPU_MEM_NUM_RAM_BANKS; ii++) {
-		unsigned char read[MPU_MEM_BANK_SIZE];
+		unsigned char read[MPU_MEM_BANK_SIZE] = {0};
 
 		result = MLSLSerialWriteMem(gyro_handle,
 					mldl_cfg->addr,

@@ -37,5 +37,8 @@ int mmc_wimax_get_CMD53_timeout_trigger_counter(void);
 int mmc_wimax_set_gpio_irq_enabled(int on);
 int mmc_wimax_get_gpio_irq_enabled(void);
 
+int mmc_wimax_trigger_RD_FIFO_LEVEL_ERROR(int on);
+int mmc_wimax_get_RD_FIFO_LEVEL_ERROR(void);
+
 #endif
 

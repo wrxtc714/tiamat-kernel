@@ -145,9 +145,14 @@ static int timerirq_open(struct inode *inode, struct file *file)
 static int timerirq_release(struct inode *inode, struct file *file)
 {
 	struct timerirq_data *data = file->private_data;
-	dev_dbg(data->dev->this_device, "timerirq_release\n");
+
+	printk(KERN_DEBUG "[TIMERIRQ] %s: data->run = %d\n",
+				__func__, data->run);
+
 	if (data->run)
 		stop_timerirq(data);
+	del_timer_sync(&(data->timer));
+
 	kfree(data);
 	return 0;
 }

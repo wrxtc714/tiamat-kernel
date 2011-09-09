@@ -682,8 +682,8 @@ static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 }
 
 cpufreq_freq_attr_ro_perm(cpuinfo_cur_freq, 0400);
-cpufreq_freq_attr_ro_perm(cpuinfo_min_freq, 0444);
-cpufreq_freq_attr_ro_perm(cpuinfo_max_freq, 0444);
+cpufreq_freq_attr_ro(cpuinfo_min_freq);
+cpufreq_freq_attr_ro(cpuinfo_max_freq);
 cpufreq_freq_attr_ro(cpuinfo_transition_latency);
 cpufreq_freq_attr_ro(scaling_available_governors);
 cpufreq_freq_attr_ro(scaling_driver);
@@ -1242,28 +1242,12 @@ static int __cpufreq_remove_dev(struct sys_device *sys_dev)
 		cpufreq_driver->exit(data);
 	unlock_policy_rwsem_write(cpu);
 
-	cpufreq_debug_enable_ratelimit();
-
-#ifdef CONFIG_HOTPLUG_CPU
-	/* when the CPU which is the parent of the kobj is hotplugged
-	 * offline, check for siblings, and create cpufreq sysfs interface
-	 * and symlinks
-	 */
-	if (unlikely(cpumask_weight(data->cpus) > 1)) {
-		/* first sibling now owns the new sysfs dir */
-		cpumask_clear_cpu(cpu, data->cpus);
-		cpufreq_add_dev(get_cpu_sysdev(cpumask_first(data->cpus)));
-
-		/* finally remove our own symlink */
-		lock_policy_rwsem_write(cpu);
-		__cpufreq_remove_dev(sys_dev);
-	}
-#endif
-
 	free_cpumask_var(data->related_cpus);
 	free_cpumask_var(data->cpus);
 	kfree(data);
+	per_cpu(cpufreq_cpu_data, cpu) = NULL;
 
+	cpufreq_debug_enable_ratelimit();
 	return 0;
 }
 
@@ -1772,12 +1756,12 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 
 	memcpy(&policy->cpuinfo, &data->cpuinfo,
 				sizeof(struct cpufreq_cpuinfo));
-#ifndef CONFIG_PERFLOCK
+
 	if (policy->min > data->max || policy->max < data->min) {
 		ret = -EINVAL;
 		goto error_out;
 	}
-#endif
+
 	/* verify the cpu speed can be set within this limit */
 	ret = cpufreq_driver->verify(policy);
 	if (ret)

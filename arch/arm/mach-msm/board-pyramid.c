@@ -150,6 +150,9 @@ extern int panel_type;
 /* Speed bin register. */
 #define QFPROM_SPEED_BIN_ADDR		(MSM_QFPROM_BASE + 0x00C0)
 
+#define MIN_VDD 800000
+#define MAX_VDD 1350000
+
 // -----------------------------------------------------------------------------
 //                         External routine declaration
 // -----------------------------------------------------------------------------
@@ -315,8 +318,8 @@ static struct regulator_consumer_supply saw_s1_supply =
 static struct regulator_init_data saw_s0_init_data = {
 		.constraints = {
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE,
-			.min_uV = 840000,
-			.max_uV = 1250000,
+			.min_uV = MIN_VDD,
+			.max_uV = MAX_VDD,
 		},
 		.num_consumer_supplies = 1,
 		.consumer_supplies = &saw_s0_supply,
@@ -325,8 +328,8 @@ static struct regulator_init_data saw_s0_init_data = {
 static struct regulator_init_data saw_s1_init_data = {
 		.constraints = {
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE,
-			.min_uV = 840000,
-			.max_uV = 1250000,
+			.min_uV = MIN_VDD,
+			.max_uV = MAX_VDD,
 		},
 		.num_consumer_supplies = 1,
 		.consumer_supplies = &saw_s1_supply,
@@ -2024,9 +2027,9 @@ static struct rpm_vreg_pdata rpm_vreg_init_pdata[RPM_VREG_ID_MAX] = {
 	RPM_VREG_INIT_LDO(PM8058_L24, 0, 1, 0, 1200000, 1200000, LDO150HMIN, 0), /* N/A */
 	RPM_VREG_INIT_LDO(PM8058_L25, 0, 1, 0, 1200000, 1200000, LDO150HMIN, 0), /* N/A */
 
-	RPM_VREG_INIT_SMPS(PM8058_S0, 0, 1, 1,  500000, 1250000, SMPS_HMIN, 0,
+	RPM_VREG_INIT_SMPS(PM8058_S0, 0, 1, 1,  500000, MAX_VDD, SMPS_HMIN, 0,
 		RPM_VREG_FREQ_1p92),
-	RPM_VREG_INIT_SMPS(PM8058_S1, 0, 1, 1,  500000, 1250000, SMPS_HMIN, 0,
+	RPM_VREG_INIT_SMPS(PM8058_S1, 0, 1, 1,  500000, MAX_VDD, SMPS_HMIN, 0,
 		RPM_VREG_FREQ_1p92),
 	RPM_VREG_INIT_SMPS(PM8058_S2, 0, 1, 0, 1200000, 1400000, SMPS_HMIN,
 		RPM_VREG_PIN_CTRL_A0, RPM_VREG_FREQ_1p92),

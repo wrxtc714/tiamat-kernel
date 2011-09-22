@@ -27,10 +27,18 @@
 #include <linux/slab.h>
 
 #ifdef CONFIG_MSM_CAMERA_8X60
+#ifdef CONFIG_MACH_PYRAMID
+#include <mach/camera-pyramid.h>
+#else
 #include <mach/camera-8x60.h>
 #endif
+#endif
 
+#ifdef CONFIG_MACH_PYRAMID
+#include <media/msm_camera_sensor-pyd.h>
+#else
 #include <media/msm_camera_sensor.h>
+#endif
 
 #include <mach/gpio.h>
 #include "mt9v113.h"

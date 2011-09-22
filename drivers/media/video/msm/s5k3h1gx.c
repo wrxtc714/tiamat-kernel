@@ -65,11 +65,19 @@
 #include <linux/slab.h>
 
 #ifdef CONFIG_MSM_CAMERA_8X60
+#ifdef CONFIG_MACH_PYRAMID
+#include <mach/camera-pyramid.h>
+#else
 #include <mach/camera-8x60.h>
+#endif
 #else
 #include <mach/camera.h>
 #endif
+#ifdef CONFIG_MACH_PYRAMID
+#include <media/msm_camera_sensor-pyd.h>
+#else
 #include <media/msm_camera_sensor.h>
+#endif
 
 #include <mach/gpio.h>
 #include <mach/vreg.h>

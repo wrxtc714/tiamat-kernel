@@ -10,8 +10,12 @@ obj-$(CONFIG_MSM_CAMERA_7X30) += msm_camera-7x30.o msm_vfe31.o msm_io_vfe31.o ms
 ifdef CONFIG_CAMERA_ZSL
 obj-$(CONFIG_MSM_CAMERA_8X60) += msm_camera-8x60.o msm_io_8x60.o msm_vfe_8x60_ZSL.o msm_axi_qos.o msm_vpe1.o
 else
-obj-$(CONFIG_MSM_CAMERA_8X60) += msm_camera-8x60.o msm_vfe_8x60.o msm_vpe1_8x60.o
-obj-$(CONFIG_MSM_CAMERA_8X60) += msm_camera.o msm_io_8x60.o msm_vfe31.o msm_axi_qos.o msm_vpe1.o
+ifdef CONFIG_MACH_PYRAMID
+obj-$(CONFIG_MSM_CAMERA_8X60) += msm_camera-8x60-pyd.o msm_io_8x60-pyd.o msm_vfe_8x60-pyd.o msm_axi_qos.o msm_vpe1_8x60-pyd.o
+else
+obj-$(CONFIG_MSM_CAMERA_8X60) += msm_camera-8x60.o msm_io_8x60.o msm_vfe_8x60.o msm_axi_qos.o msm_vpe1_8x60.o
+obj-$(CONFIG_MSM_CAMERA_8X60) += msm_camera.o msm_vfe31.o msm_vpe1.o
+endif
 endif
 obj-$(CONFIG_S5K3E2FX) += s5k3e2fx.o
 ifdef CONFIG_ARCH_MSM8X60

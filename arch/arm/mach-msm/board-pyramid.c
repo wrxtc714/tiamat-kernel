@@ -157,7 +157,7 @@ extern int panel_type;
 extern void sii9234_change_usb_owner(bool bMHL);
 #endif //CONFIG_FB_MSM_HDMI_MHL
 
-static unsigned int engineerid;
+unsigned engineerid;
 int __init pyd_init_panel(struct resource *res, size_t size);
 
 unsigned int pyramid_get_engineerid(void)

@@ -38,6 +38,7 @@
 #include "clock-8x60.h"
 #include "rpm-regulator.h"
 #include "avs.h"
+#include "tiamat.h"
 
 #define dprintk(msg...) \
 	cpufreq_debug_printk(CPUFREQ_DEBUG_DRIVER, "cpufreq-msm", msg)
@@ -47,19 +48,6 @@
 #define HOP_SWITCH		5
 #define SIMPLE_SLEW		6
 #define COMPLEX_SLEW		7
-
-/* PLL calibration limits.
- * The PLL hardware is capable of 384MHz to 1536MHz. The L_VALs
- * used for calibration should respect these limits. */
-#define L_VAL_SCPLL_CAL_MIN	0x08 /* =  432 MHz with 27MHz source */
-#define L_VAL_SCPLL_CAL_MAX	0x22 /* = 1836 MHz with 27MHz source */
-
-#define MAX_VDD_SC		1350000 /* uV */
-#define MAX_AXI			 310500 /* KHz */
-#define SCPLL_LOW_VDD_FMAX	 594000 /* KHz */
-#define SCPLL_LOW_VDD		1000000 /* uV */
-#define SCPLL_NOMINAL_VDD	1100000 /* uV */
-#define FREQ_TBL_SIZE		30	/* number */
 
 /* SCPLL Modes. */
 #define SCPLL_POWER_DOWN	0
@@ -542,7 +530,7 @@ static int increase_vdd(int cpu, unsigned int vdd_sc, unsigned int vdd_mem,
 		return rc;
 
 	/* Update per-core Scorpion voltage. */
-	rc = regulator_set_voltage(regulator_sc[cpu], vdd_sc, MAX_VDD_SC);
+	rc = regulator_set_voltage(regulator_sc[cpu], vdd_sc, VOLTAGE_MAX);
 	if (rc) {
 		pr_err("%s: vdd_sc (cpu%d) increase failed (%d)\n",
 			__func__, cpu, rc);
@@ -563,7 +551,7 @@ static void decrease_vdd(int cpu, unsigned int vdd_sc, unsigned int vdd_mem,
 	 * where the rail is off and we're executing on the other CPU. */
 	if (reason != SETRATE_HOTPLUG) {
 		ret = regulator_set_voltage(regulator_sc[cpu], vdd_sc,
-					    MAX_VDD_SC);
+					    VOLTAGE_MAX);
 		if (ret) {
 			pr_err("%s: vdd_sc (cpu%d) decrease failed (%d)\n",
 				__func__, cpu, ret);
@@ -806,7 +794,7 @@ static void __init regulator_init(void)
 		if (IS_ERR(regulator_sc[cpu]))
 			goto err;
 		ret = regulator_set_voltage(regulator_sc[cpu],
-				freq[cpu]->vdd_sc, MAX_VDD_SC);
+				freq[cpu]->vdd_sc, VOLTAGE_MAX);
 		if (ret)
 			goto err;
 		ret = regulator_enable(regulator_sc[cpu]);
@@ -902,7 +890,7 @@ static struct notifier_block __cpuinitdata acpuclock_cpu_notifier = {
 
 static unsigned int __init select_freq_plan(void)
 {
-	uint32_t pte_efuse, speed_bin, pvs, max_khz;
+	uint32_t pte_efuse, speed_bin, pvs;
 	struct clkctl_acpu_speed *f;
 
 	pte_efuse = readl(QFPROM_PTE_EFUSE_ADDR);
@@ -920,33 +908,28 @@ static unsigned int __init select_freq_plan(void)
 		case 0x0:
 		case 0x7:
 			acpu_freq_tbl = acpu_freq_tbl_slow;
-			max_khz = 1512000;
 			pr_info("ACPU PVS: Slow\n");
 			break;
 		case 0x1:
 			acpu_freq_tbl = acpu_freq_tbl_nom;
-			max_khz = 1512000;
 			pr_info("ACPU PVS: Nominal\n");
 			break;
 		case 0x3:
 			acpu_freq_tbl = acpu_freq_tbl_fast;
-			max_khz = 1836000;
 			pr_info("ACPU PVS: Fast\n");
 			break;
 		default:
 			acpu_freq_tbl = acpu_freq_tbl_slow;
-			max_khz = 1512000;
 			pr_warn("ACPU PVS: Unknown. Defaulting to slow.\n");
 			break;
 		}
 	} else {
-		max_khz = 1836000;
 		acpu_freq_tbl = acpu_freq_tbl_fast;
 	}
 
 	/* Truncate the table based to max_khz. */
 	for (f = acpu_freq_tbl; f->acpuclk_khz != 0; f++) {
-		if (f->acpuclk_khz > max_khz) {
+		if (f->acpuclk_khz > FREQ_MAX) {
 			f->acpuclk_khz = 0;
 			break;
 		}

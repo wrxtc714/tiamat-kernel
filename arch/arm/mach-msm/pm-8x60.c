@@ -34,6 +34,7 @@
 #include <linux/mfd/pmic8058.h>
 #include <linux/seq_file.h>
 #include <linux/console.h>
+#include <linux/cpufreq.h>
 #include <mach/msm_iomap.h>
 #include <mach/system.h>
 #include <mach/gpio.h>
@@ -827,6 +828,7 @@ int msm_pm_idle_prepare(struct cpuidle_device *dev)
 	uint32_t latency_us;
 	uint32_t sleep_us;
 	int i;
+	struct cpufreq_policy *policy = NULL;
 
 	latency_us = (uint32_t) pm_qos_request(PM_QOS_CPU_DMA_LATENCY);
 	sleep_us = (uint32_t) ktime_to_ns(tick_nohz_get_sleep_length());
@@ -859,6 +861,16 @@ int msm_pm_idle_prepare(struct cpuidle_device *dev)
 			if (has_wake_lock(WAKE_LOCK_IDLE)) {
 				allow = false;
 				break;
+			}
+
+			policy = cpufreq_cpu_get(dev->cpu);
+			if (policy) {
+				if (policy->cur > policy->min) {
+					allow = false;
+					cpufreq_cpu_put(policy);
+					break;
+				}
+				cpufreq_cpu_put(policy);
 			}
 
 			if (!dev->cpu &&

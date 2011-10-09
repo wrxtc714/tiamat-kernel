@@ -573,6 +573,14 @@ config USB_GADGET_DUALSPEED
 #
 # USB Gadget Drivers
 #
+
+config USB_SENSE_OVERLAY
+	boolean "Sense USB Drivers"
+	default n
+	help
+	  By default, this is an AOSP kernel.  Select this
+	  option to force the use of HTC's sense USB drivers.
+
 choice
 	tristate "USB Gadget Drivers"
 	depends on USB_GADGET && USB_GADGET_SELECTED
@@ -868,6 +876,13 @@ config USB_ANDROID_ACM
 	help
 	  Provides ACM serial function for android gadget driver.
 
+config PASCAL_DETECT
+	boolean "PASCAL DETECT"
+	depends on USB_ANDROID_ACM && USB_SENSE_OVERLAY
+	default n
+	help
+	  Provides ACM serial function for pascal mode.
+
 config USB_ANDROID_ADB
 	boolean "Android gadget adb function"
 	depends on USB_ANDROID
@@ -877,6 +892,12 @@ config USB_ANDROID_ADB
 config USB_ANDROID_DIAG
 	boolean "USB MSM7K Diag Function"
 	depends on USB_ANDROID
+	help
+	  Qualcomm diagnostics interface support.
+
+config USB_ANDROID_QCT_DIAG
+	boolean "USB MSM Diag Function"
+	depends on USB_ANDROID && USB_SENSE_OVERLAY
 	help
 	  Qualcomm diagnostics interface support.
 
@@ -898,6 +919,12 @@ config USB_ANDROID_MTP
 	help
 	  Provides Media Transfer Protocol (MTP) support for android gadget driver.
 
+config USB_ANDROID_MTP36
+	boolean "Android MTP function for HC"
+	depends on USB_ANDROID && USB_SENSE_OVERLAY
+	help
+	  Provides Media Transfer Protocol (MTP) support for android 3.0 gadget driver.
+
 config USB_ANDROID_RNDIS
 	boolean "Android gadget RNDIS ethernet function"
 	depends on USB_ANDROID
@@ -906,7 +933,7 @@ config USB_ANDROID_RNDIS
 
 config USB_ANDROID_RNDIS_WCEIS
         boolean "Use Windows Internet Sharing Class/SubClass/Protocol"
-        depends on USB_ANDROID_RNDIS
+        depends on USB_ANDROID_RNDIS && !USB_SENSE_OVERLAY
         help
          Causes the driver to look like a Windows-compatible Internet
          Sharing device, so Windows auto-detects it.
@@ -914,12 +941,61 @@ config USB_ANDROID_RNDIS_WCEIS
          If you enable this option, the device is no longer CDC ethernet
          compatible.
 
-
 config USB_ANDROID_ACCESSORY
 	boolean "Android USB accessory function"
 	depends on USB_ANDROID
 	help
 	  Provides Android USB Accessory support for android gadget driver.
+
+config USB_ANDROID_RMNET_SDIO
+       boolean "RmNet over SDIO function driver"
+       depends on USB_ANDROID && MSM_SDIO_CMUX && MSM_SDIO_DMUX && USB_SENSE_OVERLAY
+       default n
+       help
+         Enabling this option adds rmnet over sdio support to the
+         android gadget. Rmnet is an alternative to CDC-ECM
+         and Windows RNDIS. It uses QUALCOMM MSM Interface
+         for control transfers. It acts like a bridge between
+         Host and modem found in MSM chipsets.
+
+config RMNET_SDIO_CTL_CHANNEL
+       int "control SDIO channel id"
+       depends on USB_ANDROID_RMNET_SDIO && USB_SENSE_OVERLAY
+       help
+         Control SDIO channel for transferring QMI messages
+
+config RMNET_SDIO_DATA_CHANNEL
+       int "Data SDIO channel id"
+       depends on USB_ANDROID_RMNET_SDIO && USB_SENSE_OVERLAY
+       help
+         Data SDIO channel for transferring network data
+
+config USB_ANDROID_SERIAL
+	boolean "Android gadget Serial function"
+	depends on USB_ANDROID && USB_SENSE_OVERLAY
+	help
+
+config USB_ANDROID_PROJECTOR
+	boolean "Android gadget Projector function"
+	depends on USB_ANDROID && USB_SENSE_OVERLAY
+	help
+
+config USB_ANDROID_ECM
+	boolean "Android gadget ECM function"
+	depends on USB_ANDROID && USB_SENSE_OVERLAY
+	help
+
+config USB_F_SERIAL_SDIO
+	boolean "generic serial function driver over SDIO"
+	depends on USB_ANDROID && MSM_SDIO_CMUX && MSM_SDIO_AL && USB_SENSE_OVERLAY
+	default n
+	help
+          Gadget serial driver is one way to communicate with modem
+          device. This option enables serial driver to communicate
+          to modem device using sdio. It makes very minimal changes
+          to Gadget usb serial interface(f_serial.c) and adds
+          separate transport layer u_sdio(very similar to u_serial.c)
+          Say "y" to link the driver staticall
 
 config USB_CDC_COMPOSITE
 	tristate "CDC Composite Device (Ethernet and ACM)"

@@ -14,7 +14,11 @@
 #ifndef _F_UVC_H_
 #define _F_UVC_H_
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include <linux/usb/composite_sense.h>
+#else
 #include <linux/usb/composite.h>
+#endif
 
 #define USB_CLASS_VIDEO_CONTROL		1
 #define USB_CLASS_VIDEO_STREAMING	2

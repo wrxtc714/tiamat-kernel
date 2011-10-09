@@ -27,8 +27,13 @@
 #include <linux/kernel.h>
 #include <linux/device.h>
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "u_serial_sense.h"
+#include "gadget_chips_sense.h"
+#else
 #include "u_serial.h"
 #include "gadget_chips.h"
+#endif
 
 
 /*

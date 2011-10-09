@@ -119,7 +119,11 @@
 #include "rpm-regulator.h"
 #include "sysinfo-8x60.h"
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include <mach/htc_usb_sense.h>
+#else
 #include <mach/htc_usb.h>
+#endif
 #include <mach/rpc_hsusb.h>
 #include <mach/cable_detect.h>
 

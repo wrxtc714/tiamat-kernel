@@ -23,7 +23,11 @@
 #include <linux/utsname.h>
 
 #include "u_ether.h"
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "u_serial_sense.h"
+#else
 #include "u_serial.h"
+#endif
 
 
 #define DRIVER_DESC		"CDC Composite Gadget"
@@ -51,11 +55,19 @@
  * a "gcc --combine ... part1.c part2.c part3.c ... " build would.
  */
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "composite_sense.c"
+#else
 #include "composite.c"
+#endif
 #include "usbstring.c"
 #include "config.c"
 #include "epautoconf.c"
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "u_serial_sense.c"
+#else
 #include "u_serial.c"
+#endif
 #include "f_acm.c"
 #include "f_ecm.c"
 #include "u_ether.c"

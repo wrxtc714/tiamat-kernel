@@ -17,7 +17,6 @@
 #include "u_serial.h"
 #include "gadget_chips.h"
 
-
 /*
  * This function packages a simple "generic serial" port with no real
  * control mechanisms, just raw data transfer over two bulk endpoints.

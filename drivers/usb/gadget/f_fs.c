@@ -32,7 +32,11 @@
 #include <asm/unaligned.h>
 #include <linux/smp_lock.h>
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include <linux/usb/composite_sense.h>
+#else
 #include <linux/usb/composite.h>
+#endif
 #include <linux/usb/functionfs.h>
 
 

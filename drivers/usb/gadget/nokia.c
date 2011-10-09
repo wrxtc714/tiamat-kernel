@@ -19,10 +19,15 @@
 #include <linux/utsname.h>
 #include <linux/device.h>
 
-#include "u_serial.h"
 #include "u_ether.h"
 #include "u_phonet.h"
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "u_serial_sense.h"
+#include "gadget_chips_sense.h"
+#else
+#include "u_serial.h"
 #include "gadget_chips.h"
+#endif
 
 /* Defines */
 
@@ -38,16 +43,28 @@
  * the runtime footprint, and giving us at least some parts of what
  * a "gcc --combine ... part1.c part2.c part3.c ... " build would.
  */
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "composite_sense.c"
+#else
 #include "composite.c"
+#endif
 #include "usbstring.c"
 #include "config.c"
 #include "epautoconf.c"
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "u_serial_sense.c"
+#else
 #include "u_serial.c"
+#endif
 #include "f_acm.c"
 #include "f_ecm.c"
 #include "f_obex.c"
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "f_serial_sense.c"
+#else
 #include "f_serial.c"
+#endif
 #include "f_phonet.c"
 #include "u_ether.c"
 

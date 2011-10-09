@@ -6,7 +6,11 @@
 #ifndef __G_ZERO_H
 #define __G_ZERO_H
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include <linux/usb/composite_sense.h>
+#else
 #include <linux/usb/composite.h>
+#endif
 
 /* global state */
 extern unsigned buflen;

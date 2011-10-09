@@ -25,10 +25,18 @@
 
 #include <linux/err.h>
 #include <linux/if_ether.h>
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include <linux/usb/composite_sense.h>
+#else
 #include <linux/usb/composite.h>
+#endif
 #include <linux/usb/cdc.h>
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "gadget_chips_sense.h"
+#else
 #include "gadget_chips.h"
+#endif
 
 
 /*

@@ -22,7 +22,11 @@
 #include <mach/usbdiag.h>
 #include <mach/rpc_hsusb.h>
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include <linux/usb/composite_sense.h>
+#else
 #include <linux/usb/composite.h>
+#endif
 #include <linux/usb/gadget.h>
 #include <linux/usb/android_composite.h>
 #include <linux/workqueue.h>

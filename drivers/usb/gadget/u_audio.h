@@ -15,13 +15,21 @@
 #include <linux/device.h>
 #include <linux/err.h>
 #include <linux/usb/audio.h>
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include <linux/usb/composite_sense.h>
+#else
 #include <linux/usb/composite.h>
+#endif
 
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/pcm_params.h>
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "gadget_chips_sense.h"
+#else
 #include "gadget_chips.h"
+#endif
 
 /*
  * This represents the USB side of an audio card device, managed by a USB

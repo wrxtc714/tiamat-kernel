@@ -10,7 +10,11 @@
  * a "gcc --combine ... part1.c part2.c part3.c ... " build would.
  */
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "composite_sense.c"
+#else
 #include "composite.c"
+#endif
 #include "usbstring.c"
 #include "config.c"
 #include "epautoconf.c"
@@ -26,7 +30,11 @@
 #  include "f_ecm.c"
 #  include "f_subset.c"
 #  ifdef USB_ETH_RNDIS
-#    include "f_rndis.c"
+#    ifdef CONFIG_USB_SENSE_OVERLAY
+#      include "f_rndis_sense.c"
+#    else
+#      include "f_rndis.c"
+#    endif
 #    include "rndis.c"
 #  endif
 #  include "u_ether.c"

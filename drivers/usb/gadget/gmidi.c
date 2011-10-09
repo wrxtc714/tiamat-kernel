@@ -34,7 +34,11 @@
 #include <linux/usb/audio.h>
 #include <linux/usb/midi.h>
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "gadget_chips_sense.h"
+#else
 #include "gadget_chips.h"
+#endif
 
 
 /*

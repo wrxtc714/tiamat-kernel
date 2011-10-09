@@ -251,7 +251,11 @@
 #include <linux/usb/ch9.h>
 #include <linux/usb/gadget.h>
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "gadget_chips_sense.h"
+#else
 #include "gadget_chips.h"
+#endif
 
 
 

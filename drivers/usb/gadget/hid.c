@@ -43,7 +43,11 @@
  * a "gcc --combine ... part1.c part2.c part3.c ... " build would.
  */
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "composite_sense.c"
+#else
 #include "composite.c"
+#endif
 #include "usbstring.c"
 #include "config.c"
 #include "epautoconf.c"

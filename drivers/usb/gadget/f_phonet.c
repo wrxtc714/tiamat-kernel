@@ -31,7 +31,11 @@
 
 #include <linux/usb/ch9.h>
 #include <linux/usb/cdc.h>
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include <linux/usb/composite_sense.h>
+#else
 #include <linux/usb/composite.h>
+#endif
 
 #include "u_phonet.h"
 

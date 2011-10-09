@@ -19,8 +19,13 @@
 #include <linux/device.h>
 #include <linux/usb/android_composite.h>
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "u_serial_sense.h"
+#include "gadget_chips_sense.h"
+#else
 #include "u_serial.h"
 #include "gadget_chips.h"
+#endif
 
 
 /*

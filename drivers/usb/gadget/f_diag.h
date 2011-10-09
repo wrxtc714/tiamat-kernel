@@ -18,7 +18,11 @@
 #ifndef __F_DIAG_H
 #define __F_DIAG_H
 
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include <linux/usb/composite_sense.h>
+#else
 #include <linux/usb/composite.h>
+#endif
 #include <linux/usb/gadget.h>
 
 

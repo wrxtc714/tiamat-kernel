@@ -55,7 +55,11 @@
 #include <linux/device.h>
 
 #include "g_zero.h"
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "gadget_chips_sense.h"
+#else
 #include "gadget_chips.h"
+#endif
 
 
 /*-------------------------------------------------------------------------*/
@@ -67,7 +71,11 @@
  * the runtime footprint, and giving us at least some parts of what
  * a "gcc --combine ... part1.c part2.c part3.c ... " build would.
  */
+#ifdef CONFIG_USB_SENSE_OVERLAY
+#include "composite_sense.c"
+#else
 #include "composite.c"
+#endif
 #include "usbstring.c"
 #include "config.c"
 #include "epautoconf.c"
